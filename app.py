@@ -23,7 +23,34 @@ import torch.nn as nn
 import torchvision.models as models
 import torchvision.transforms as transforms
 
+import os
+import requests
 
+MODELS = {
+    "plant_disease_model_v3.pth": "https://github.com/aboremasx0x-boop/phytologic-ai-hackathon/releases/download/v1/plant_disease_model_v3.pth",
+    "plant_model.pth": "https://github.com/aboremasx0x-boop/phytologic-ai-hackathon/releases/download/v1/plant_model.pth",
+    "tomato_disease_model.pth": "https://github.com/aboremasx0x-boop/phytologic-ai-hackathon/releases/download/v1/tomato_disease_model.pth"
+}
+
+def download_model(filename, url):
+    if not os.path.exists(filename):
+        print(f"Downloading {filename}...")
+
+        # تحميل على شكل chunks (مهم للملفات الكبيرة)
+        with requests.get(url, stream=True) as r:
+            r.raise_for_status()
+            with open(filename, "wb") as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+
+        print(f"{filename} downloaded successfully")
+    else:
+        print(f"{filename} already exists")
+
+# تحميل كل الموديلات
+for name, link in MODELS.items():
+    download_model(name, link)
 # =========================================================
 # إعداد التطبيق
 # =========================================================
