@@ -115,7 +115,7 @@ required_files = [
 
 for fp in required_files:
     if not os.path.exists(fp):
-        raise FileNotFoundError(f"Missing required model file: {fp}")
+        print(f"Model not found yet: {fp} (will download automatically)")
 
 # =========================================================
 # ثوابت وقواميس
@@ -1703,3 +1703,10 @@ async def logout_user(authorization: Optional[str] = Header(None)):
         save_sessions(sessions)
 
     return {"status": "ok", "message": "تم تسجيل الخروج."}
+
+import uvicorn
+import os
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run("app:app", host="0.0.0.0", port=port)
