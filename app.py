@@ -1119,7 +1119,7 @@ def get_current_user_from_token(authorization: Optional[str]):
 # =========================================================
 @app.get("/")
 def home():
-    return serve_page(INDEX_PATH, "index.html not found")
+    return serve_page(NATIONAL_CENTER_PATH, "national_center.html not found")
 
 
 @app.get("/ui")
