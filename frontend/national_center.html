@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phytologic AI - National Command Center</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+  <style>
+    :root{
+      --bg:#08162b;
+      --panel:#102445;
+      --line:rgba(255,255,255,.08);
+      --text:#eef4ff;
+      --muted:#a9bdd9;
+      --green:#22c55e;
+      --yellow:#f59e0b;
+      --red:#ef4444;
+      --pink:#ec4899;
+      --cyan:#38bdf8;
+      --shadow:0 12px 28px rgba(0,0,0,.25);
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Tahoma,Arial,sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(59,130,246,.08), transparent 18%),
+        radial-gradient(circle at top right, rgba(56,189,248,.08), transparent 16%),
+        linear-gradient(180deg,#071224 0%, #09172d 100%);
+      color:var(--text);
+    }
+
+    .app{
+      display:grid;
+      grid-template-columns:280px 1fr;
+      min-height:100vh;
+    }
+
+    .sidebar{
+      background:linear-gradient(180deg, rgba(15,37,70,.96), rgba(10,28,54,.96));
+      border-left:1px solid var(--line);
+      padding:18px 16px;
+      position:sticky;
+      top:0;
+      height:100vh;
+      overflow:auto;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 16px;
+      border-radius:20px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      margin-bottom:16px;
+      box-shadow:var(--shadow);
+    }
+
+    .brand h1{margin:0;font-size:18px;line-height:1.2}
+    .brand small{display:block;color:var(--muted);margin-top:4px;font-size:11px}
+    .brand-logo{
+      width:46px;height:46px;border-radius:14px;display:grid;place-items:center;
+      background:linear-gradient(135deg, rgba(56,189,248,.25), rgba(34,197,94,.18));
+      font-size:22px;
+    }
+
+    .nav{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+    .nav a{
+      color:var(--text);text-decoration:none;padding:12px 14px;border-radius:14px;
+      border:1px solid transparent;background:transparent;transition:.18s ease;font-size:14px;
+    }
+    .nav a:hover,.nav a.active{
+      background:linear-gradient(90deg, rgba(59,130,246,.16), rgba(56,189,248,.10));
+      border-color:var(--line);
+    }
+
+    .side-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      margin-bottom:14px;
+    }
+
+    .side-card h3{margin:0 0 10px;font-size:14px}
+    .side-row{
+      display:flex;justify-content:space-between;gap:10px;padding:7px 0;
+      border-bottom:1px dashed rgba(255,255,255,.06);font-size:13px;
+    }
+    .side-row:last-child{border-bottom:none}
+    .side-row span:first-child{color:var(--muted)}
+
+    .main{padding:18px}
+
+    .hero{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .hero-main{
+      background:linear-gradient(135deg, rgba(37,99,235,.25), rgba(16,185,129,.18));
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:22px;
+      box-shadow:var(--shadow);
+    }
+
+    .hero-main h2{margin:0 0 8px;font-size:22px;line-height:1.4}
+    .hero-main p{margin:0;color:var(--muted);line-height:1.9;font-size:14px}
+
+    .hero-actions{
+      display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;
+    }
+
+    .btn{
+      border:none;border-radius:12px;padding:10px 14px;font-weight:bold;cursor:pointer;
+      transition:.18s ease;
+    }
+    .btn-primary{background:linear-gradient(135deg,#2563eb,#0ea5e9);color:#fff}
+    .btn-secondary{background:rgba(255,255,255,.05);color:var(--text);border:1px solid var(--line)}
+    .btn:hover{transform:translateY(-1px)}
+
+    .hero-side{display:grid;gap:16px}
+
+    .panel{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .panel-head{
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+      padding:14px 16px;border-bottom:1px solid var(--line);font-weight:bold;
+    }
+
+    .panel-body{padding:16px}
+
+    .kpi-grid{
+      display:grid;
+      grid-template-columns:repeat(6,1fr);
+      gap:14px;
+      margin-bottom:16px;
+    }
+
+    .kpi{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:var(--shadow);
+      position:relative;
+    }
+
+    .kpi::before{
+      content:"";
+      position:absolute;
+      inset:0 0 auto 0;
+      height:3px;
+      border-radius:18px 18px 0 0;
+      background:linear-gradient(90deg, rgba(56,189,248,.2), rgba(59,130,246,.9));
+    }
+
+    .kpi-label{color:var(--muted);font-size:13px;margin-bottom:10px}
+    .kpi-value{font-size:28px;font-weight:800;line-height:1;margin-bottom:8px}
+    .kpi-sub{font-size:12px;color:#c8d6eb}
+
+    .layout{
+      display:grid;
+      grid-template-columns:1.35fr .65fr;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    #map{width:100%;height:620px;background:#0c182d}
+
+    .map-wrap{position:relative}
+    .map-floating{
+      position:absolute;top:14px;left:14px;z-index:500;display:flex;gap:8px;
+      flex-wrap:wrap;max-width:320px;
+    }
+
+    .tiny-btn{
+      border:none;border-radius:10px;padding:8px 10px;font-size:12px;cursor:pointer;
+      background:rgba(15,23,42,.88);color:#fff;border:1px solid rgba(255,255,255,.08);
+      backdrop-filter: blur(8px);
+    }
+
+    .legend{
+      display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:#dbeafe;
+    }
+    .legend span{display:inline-flex;align-items:center;gap:6px}
+    .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+
+    .right-col{
+      display:grid;
+      grid-template-rows:auto auto 1fr;
+      gap:16px;
+    }
+
+    .risk-box{
+      display:flex;justify-content:space-between;align-items:center;gap:14px;
+    }
+
+    .risk-meter{
+      width:120px;height:120px;border-radius:50%;display:grid;place-items:center;
+      font-size:24px;font-weight:800;
+      background:
+        radial-gradient(closest-side, #122443 75%, transparent 77% 100%),
+        conic-gradient(var(--pink) 0 0%, rgba(255,255,255,.08) 0 100%);
+    }
+
+    .risk-text h3{margin:0 0 8px;font-size:22px}
+    .risk-text p{margin:0;color:var(--muted);line-height:1.8;font-size:14px}
+
+    .insight{
+      padding:12px;border:1px solid rgba(255,255,255,.06);border-radius:14px;
+      background:rgba(255,255,255,.03);margin-bottom:10px;
+    }
+    .insight:last-child{margin-bottom:0}
+    .insight strong{display:block;margin-bottom:6px}
+    .insight span{color:var(--muted);line-height:1.8;font-size:13px}
+
+    .lower{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .list{max-height:380px;overflow:auto}
+
+    .item{
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      background:rgba(255,255,255,.03);
+      padding:12px;
+      margin-bottom:10px;
+    }
+
+    .item:last-child{margin-bottom:0}
+    .item-top{
+      display:flex;justify-content:space-between;gap:10px;margin-bottom:8px;
+    }
+    .item-title{font-weight:bold;font-size:14px}
+    .item-meta{color:var(--muted);line-height:1.8;font-size:13px}
+
+    .badge{
+      display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;
+      font-size:12px;font-weight:bold;
+    }
+    .badge.low{background:rgba(34,197,94,.14);color:#86efac}
+    .badge.medium{background:rgba(245,158,11,.14);color:#fde68a}
+    .badge.high{background:rgba(239,68,68,.14);color:#fca5a5}
+    .badge.critical{background:rgba(236,72,153,.14);color:#f9a8d4}
+
+    .empty{color:var(--muted);font-size:13px;line-height:1.8}
+    .footer{margin-top:14px;color:var(--muted);text-align:center;font-size:12px}
+
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip{
+      background:#102445;
+      color:#eef4ff;
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    @media (max-width:1450px){
+      .kpi-grid{grid-template-columns:repeat(3,1fr)}
+      .lower{grid-template-columns:1fr}
+    }
+
+    @media (max-width:1100px){
+      .app{grid-template-columns:1fr}
+      .sidebar{
+        position:relative;
+        height:auto;
+        border-left:none;
+        border-bottom:1px solid var(--line);
+      }
+      .hero,.layout{grid-template-columns:1fr}
+    }
+
+    @media (max-width:700px){
+      .kpi-grid{grid-template-columns:1fr 1fr}
+      #map{height:440px}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div>
+          <h1>Phytologic AI</h1>
+          <small>Unified Plant Health Command</small>
+        </div>
+        <div class="brand-logo">🌿</div>
+      </div>
+
+      <div class="nav">
+        <a href="/national_center" class="active">المركز الوطني</a>
+        <a href="/ui">التشخيص الذكي</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/alerts_page">Alerts</a>
+        <a href="/forecast">Forecast</a>
+        <a href="/forecast_ai">Forecast AI</a>
+        <a href="/ops">Ops</a>
+        <a href="/reports_center">Reports</a>
+      </div>
+
+      <div class="side-card">
+        <h3>حالة المنصة</h3>
+        <div class="side-row"><span>API</span><span id="apiStatus">...</span></div>
+        <div class="side-row"><span>Models</span><span id="modelStatus">...</span></div>
+        <div class="side-row"><span>Weather Feed</span><span id="weatherFeedStatus">Live</span></div>
+        <div class="side-row"><span>آخر تحديث</span><span id="lastUpdateLabel">--:--</span></div>
+      </div>
+
+      <div class="side-card">
+        <h3>الملخص السريع</h3>
+        <div class="side-row"><span>حالات اليوم</span><span id="todayCasesMini">0</span></div>
+        <div class="side-row"><span>مناطق حرجة</span><span id="criticalZonesMini">0</span></div>
+        <div class="side-row"><span>تنبيهات</span><span id="alertsMini">0</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="hero">
+        <div class="hero-main">
+          <h2>مركز قيادة وطني لصحة النبات والإنذار المبكر</h2>
+          <p>
+            واجهة تشغيل موحدة مرتبطة ببيانات المنصة الحقيقية، تشمل الخريطة الحية، Heatmap، طبقة GeoJSON للمناطق، التوقع المباشر للانتشار، التنبيهات، والملخصات الوطنية.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" id="refreshBtn">تحديث حي</button>
+            <button class="btn btn-secondary" id="focusCriticalBtn">إظهار المناطق الحرجة</button>
+            <button class="btn btn-secondary" id="resetViewBtn">إعادة الضبط</button>
+          </div>
+        </div>
+
+        <div class="hero-side">
+          <div class="panel">
+            <div class="panel-head">حالة التشغيل</div>
+            <div class="panel-body">
+              <div class="side-row"><span>الأمراض المسجلة</span><span id="heroTopDisease">-</span></div>
+              <div class="side-row"><span>أعلى منطقة</span><span id="heroTopRegion">-</span></div>
+              <div class="side-row"><span>Forecast</span><span id="heroForecastStatus">Live</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">إجمالي الحالات</div>
+          <div class="kpi-value" id="kpiCases">0</div>
+          <div class="kpi-sub">من السجل الحقيقي</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">الحالات المؤكدة</div>
+          <div class="kpi-value" id="kpiConfirmed">0</div>
+          <div class="kpi-sub">من API التشخيص</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">غير المؤكدة</div>
+          <div class="kpi-value" id="kpiUncertain">0</div>
+          <div class="kpi-sub">بحاجة مراجعة</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">المؤشر الوطني للخطر</div>
+          <div class="kpi-value" id="kpiRisk">0</div>
+          <div class="kpi-sub">متوسط risk_score</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">أعلى منطقة تسجيل</div>
+          <div class="kpi-value" id="kpiRegion">-</div>
+          <div class="kpi-sub">حسب الإحداثيات والمناطق</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">توقع 72 ساعة</div>
+          <div class="kpi-value" id="kpiForecast72">0</div>
+          <div class="kpi-sub">أعلى مخاطر قادمة</div>
+        </div>
+      </section>
+
+      <section class="layout">
+        <div class="panel">
+          <div class="panel-head">
+            <span>الخريطة الحية للإصابات</span>
+            <div class="legend">
+              <span><i class="dot" style="background:#22c55e"></i> منخفضة</span>
+              <span><i class="dot" style="background:#f59e0b"></i> متوسطة</span>
+              <span><i class="dot" style="background:#ef4444"></i> عالية</span>
+              <span><i class="dot" style="background:#38bdf8"></i> طقس</span>
+              <span><i class="dot" style="background:#ec4899"></i> حرج</span>
+            </div>
+          </div>
+          <div class="map-wrap">
+            <div class="map-floating">
+              <button class="tiny-btn" id="toggleMarkersBtn">Markers</button>
+              <button class="tiny-btn" id="toggleHeatBtn">Heatmap</button>
+              <button class="tiny-btn" id="toggleWeatherBtn">Weather</button>
+              <button class="tiny-btn" id="toggleRegionsBtn">Regions</button>
+            </div>
+            <div id="map"></div>
+          </div>
+        </div>
+
+        <div class="right-col">
+          <div class="panel">
+            <div class="panel-head">مؤشر الخطر الوطني</div>
+            <div class="panel-body">
+              <div class="risk-box">
+                <div class="risk-meter" id="riskMeter"><span id="riskMeterValue">0</span></div>
+                <div class="risk-text">
+                  <h3 id="riskLevelText">منخفض</h3>
+                  <p id="riskExplanation">سيتم حساب المؤشر مباشرة من البيانات المخزنة في السجل.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">AI Mission Brief</div>
+            <div class="panel-body" id="insightsBox">
+              <div class="insight">
+                <strong>جاري التحليل</strong>
+                <span>سيتم إنشاء رؤى حية بعد تحميل البيانات.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">ملخص المناطق</div>
+            <div class="panel-body list" id="zonesBox">
+              <div class="empty">جاري تحميل المناطق...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lower">
+        <div class="panel">
+          <div class="panel-head">التنبيهات الحية</div>
+          <div class="panel-body list" id="alertsBox">
+            <div class="empty">جاري تحميل التنبيهات...</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">آخر الحالات</div>
+          <div class="panel-body list" id="recentBox">
+            <div class="empty">جاري تحميل الحالات...</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">توقع الانتشار المباشر</div>
+          <div class="panel-body list" id="forecastBox">
+            <div class="empty">جاري تحميل التوقع...</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="footer">
+        Phytologic AI — National Command Center
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let map;
+    let caseLayer;
+    let weatherLayer;
+    let heatLayer = null;
+    let regionsLayer = null;
+
+    let rawCases = [];
+    let rawAlerts = [];
+    let rawRecent = [];
+    let rawStats = null;
+    let rawZones = [];
+    let rawRegionsGeoJSON = null;
+    let rawForecast = [];
+
+    let markersVisible = true;
+    let weatherVisible = true;
+    let heatVisible = true;
+    let regionsVisible = true;
+
+    function val(v){
+      return v === null || v === undefined ? "-" : v;
+    }
+
+    function animateNumber(id, target){
+      const el = document.getElementById(id);
+      const end = Number(target) || 0;
+      const start = Number(el.dataset.current || 0);
+      const duration = 450;
+      const steps = 20;
+      const stepValue = (end - start) / steps;
+      let current = start;
+      let step = 0;
+
+      const timer = setInterval(() => {
+        step++;
+        current += stepValue;
+        if(step >= steps){
+          el.textContent = end;
+          el.dataset.current = end;
+          clearInterval(timer);
+        } else {
+          el.textContent = Math.round(current);
+        }
+      }, duration / steps);
+    }
+
+    function riskColor(score){
+      const s = Number(score) || 0;
+      if(s >= 85) return "#ec4899";
+      if(s >= 70) return "#ef4444";
+      if(s >= 45) return "#f59e0b";
+      if(s > 0) return "#22c55e";
+      return "#64748b";
+    }
+
+    function riskClass(score){
+      const s = Number(score) || 0;
+      if(s >= 85) return "critical";
+      if(s >= 70) return "high";
+      if(s >= 45) return "medium";
+      return "low";
+    }
+
+    function riskLabel(score){
+      const s = Number(score) || 0;
+      if(s >= 85) return "حرج";
+      if(s >= 70) return "مرتفع";
+      if(s >= 45) return "متوسط";
+      return "منخفض";
+    }
+
+    function severityRadius(sev){
+      if(sev === "عالية") return 12;
+      if(sev === "متوسطة") return 9;
+      return 7;
+    }
+
+    function initMap(){
+      map = L.map("map").setView([23.8859, 45.0792], 5);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap"
+      }).addTo(map);
+
+      caseLayer = L.layerGroup().addTo(map);
+      weatherLayer = L.layerGroup().addTo(map);
+    }
+
+    function popupHtml(item){
+      const weather = item.weather && item.weather.current ? item.weather.current : {};
+      return `
+        <div style="line-height:1.9;font-size:13px;min-width:220px">
+          <strong>${item.plant_ar || "-"}</strong><br>
+          المرض: ${item.disease_ar || "-"}<br>
+          الشدة: ${item.severity || "-"} (${val(item.severity_percent)}%)<br>
+          الثقة: ${val(item.confidence)}%<br>
+          القرار: ${item.decision || "-"}<br>
+          الخطر: ${val(item.risk_score)}<br>
+          المنطقة: ${item.region || "-"}<br>
+          الحرارة: ${val(weather.temperature_2m)}<br>
+          الرطوبة: ${val(weather.relative_humidity_2m)}<br>
+          الوقت: ${item.timestamp || "-"}
+        </div>
+      `;
+    }
+
+    function renderMarkers(items){
+      caseLayer.clearLayers();
+      if(!markersVisible) return;
+
+      items.forEach(item => {
+        if(item.latitude == null || item.longitude == null) return;
+
+        L.circleMarker([item.latitude, item.longitude], {
+          radius: severityRadius(item.severity),
+          color: riskColor(item.risk_score),
+          fillColor: riskColor(item.risk_score),
+          fillOpacity: 0.55,
+          weight: 2
+        })
+        .bindPopup(popupHtml(item))
+        .addTo(caseLayer);
+      });
+    }
+
+    function renderHeatmap(items){
+      if(heatLayer){
+        map.removeLayer(heatLayer);
+        heatLayer = null;
+      }
+
+      if(!heatVisible) return;
+
+      const points = items
+        .filter(x => x.latitude != null && x.longitude != null)
+        .map(x => {
+          let intensity = 0.35;
+          const score = Number(x.risk_score || 0);
+          if(score >= 85) intensity = 1.15;
+          else if(score >= 70) intensity = 1.0;
+          else if(score >= 45) intensity = 0.65;
+          return [x.latitude, x.longitude, intensity];
+        });
+
+      if(points.length){
+        heatLayer = L.heatLayer(points, {
+          radius: 28,
+          blur: 22,
+          maxZoom: 10
+        }).addTo(map);
+      }
+    }
+
+    function renderWeatherPoints(items){
+      weatherLayer.clearLayers();
+      if(!weatherVisible) return;
+
+      items.forEach(item => {
+        if(item.latitude == null || item.longitude == null) return;
+
+        L.circleMarker([item.latitude, item.longitude], {
+          radius: 5,
+          color: "#38bdf8",
+          fillColor: "#38bdf8",
+          fillOpacity: 0.85,
+          weight: 1
+        })
+        .bindPopup(`
+          <div style="line-height:1.9;font-size:13px">
+            <strong>طقس الموقع</strong><br>
+            الحرارة: ${val(item.temperature)}<br>
+            الرطوبة: ${val(item.humidity)}<br>
+            المطر: ${val(item.precipitation)}<br>
+            الرياح: ${val(item.wind_speed)}<br>
+            النبات: ${item.plant_ar || "-"}<br>
+            المرض: ${item.disease_ar || "-"}
+          </div>
+        `)
+        .addTo(weatherLayer);
+      });
+    }
+
+    function buildZonesLookup(zones){
+      const lookup = {};
+      zones.forEach(z => {
+        lookup[z.region] = z;
+      });
+      return lookup;
+    }
+
+    function renderRegionsLayer(geojsonData, zones){
+      if(regionsLayer){
+        map.removeLayer(regionsLayer);
+        regionsLayer = null;
+      }
+
+      if(!regionsVisible || !geojsonData || !geojsonData.features) return;
+
+      const lookup = buildZonesLookup(zones);
+
+      regionsLayer = L.geoJSON(geojsonData, {
+        style: function(feature){
+          const regionName = feature.properties?.name || "غير محددة";
+          const z = lookup[regionName];
+          return {
+            color: "#cbd5e1",
+            weight: 1.2,
+            fillColor: riskColor(z ? z.avg_risk : 0),
+            fillOpacity: z ? 0.32 : 0.12
+          };
+        },
+        onEachFeature: function(feature, layer){
+          const regionName = feature.properties?.name || "غير محددة";
+          const z = lookup[regionName];
+
+          layer.bindPopup(`
+            <div style="line-height:1.9;font-size:13px;min-width:220px">
+              <strong>${regionName}</strong><br>
+              عدد الحالات: ${z ? z.count : 0}<br>
+              المؤكدة: ${z ? z.confirmed : 0}<br>
+              متوسط الخطر: ${z ? z.avg_risk : 0}<br>
+              متوسط الشدة: ${z ? z.avg_severity_percent : 0}%<br>
+              أكثر مرض: ${z ? z.top_disease : "-"}
+            </div>
+          `);
+        }
+      }).addTo(map);
+    }
+
+    function topDisease(items){
+      const counts = {};
+      items.forEach(x => {
+        const key = x.disease_ar || x.disease || "غير معروف";
+        counts[key] = (counts[key] || 0) + 1;
+      });
+      const top = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+      return top ? top[0] : "-";
+    }
+
+    function topRegion(items){
+      const counts = {};
+      items.forEach(x => {
+        const key = x.region || "غير محددة";
+        counts[key] = (counts[key] || 0) + 1;
+      });
+      const top = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+      return top ? top[0] : "-";
+    }
+
+    function updateKPIs(items){
+      const total = rawStats?.total_predictions ?? items.length;
+      const confirmed = rawStats?.confirmed ?? items.filter(x => x.decision === "مؤكد").length;
+      const uncertain = rawStats?.uncertain ?? items.filter(x => x.decision !== "مؤكد").length;
+      const avgRisk = items.length ? Math.round(items.reduce((a,b)=>a + (Number(b.risk_score) || 0), 0) / items.length) : 0;
+      const region = topRegion(items);
+      const disease = topDisease(items);
+      const topForecast72 = rawForecast.length ? Math.round(rawForecast[0].risk_72h) : 0;
+
+      animateNumber("kpiCases", total);
+      animateNumber("kpiConfirmed", confirmed);
+      animateNumber("kpiUncertain", uncertain);
+      animateNumber("kpiRisk", avgRisk);
+      animateNumber("kpiForecast72", topForecast72);
+
+      document.getElementById("kpiRegion").textContent = region;
+      document.getElementById("heroTopDisease").textContent = disease;
+      document.getElementById("heroTopRegion").textContent = region;
+
+      document.getElementById("todayCasesMini").textContent = total;
+      document.getElementById("criticalZonesMini").textContent = rawZones.filter(z => Number(z.avg_risk || 0) >= 80).length;
+      document.getElementById("alertsMini").textContent = rawAlerts.length;
+      document.getElementById("lastUpdateLabel").textContent = new Date().toLocaleTimeString("ar-SA");
+
+      document.getElementById("riskMeterValue").textContent = avgRisk;
+      document.getElementById("riskMeter").style.background =
+        `radial-gradient(closest-side, #122443 75%, transparent 77% 100%), conic-gradient(#ec4899 0 ${avgRisk}%, rgba(255,255,255,.08) ${avgRisk}% 100%)`;
+
+      let level = "منخفض";
+      let explanation = "الوضع الوطني العام مستقر نسبيًا.";
+
+      if(avgRisk >= 80){
+        level = "حرج";
+        explanation = "هناك بؤر عالية الخطورة تستلزم استجابة ميدانية عاجلة.";
+      } else if(avgRisk >= 65){
+        level = "مرتفع";
+        explanation = "الخطر الوطني مرتفع ويستدعي تكثيف الرصد والوقاية.";
+      } else if(avgRisk >= 45){
+        level = "متوسط";
+        explanation = "توجد مؤشرات انتشار تستدعي المتابعة الوقائية.";
+      }
+
+      document.getElementById("riskLevelText").textContent = level;
+      document.getElementById("riskExplanation").textContent = explanation;
+    }
+
+    function renderInsights(items){
+      const box = document.getElementById("insightsBox");
+
+      if(!items.length){
+        box.innerHTML = `
+          <div class="insight">
+            <strong>لا توجد بيانات خريطة بعد</strong>
+            <span>ابدأ بإرسال تشخيصات تحتوي على Latitude و Longitude حتى تظهر المؤشرات المكانية وطبقة المناطق.</span>
+          </div>
+        `;
+        return;
+      }
+
+      const disease = topDisease(items);
+      const region = topRegion(items);
+      const highest = [...items].sort((a,b)=>(Number(b.risk_score)||0)-(Number(a.risk_score)||0))[0];
+      const forecastRegion = rawForecast.length ? rawForecast[0].region : "-";
+
+      box.innerHTML = `
+        <div class="insight">
+          <strong>المرض الأبرز الآن</strong>
+          <span>${disease}</span>
+        </div>
+        <div class="insight">
+          <strong>أعلى منطقة نشاطًا</strong>
+          <span>${region}</span>
+        </div>
+        <div class="insight">
+          <strong>أولوية ميدانية</strong>
+          <span>الحالة الأعلى خطورة حاليًا مرتبطة بـ ${highest?.disease_ar || "-"} في ${highest?.region || "منطقة غير محددة"}.</span>
+        </div>
+        <div class="insight">
+          <strong>منطقة متوقعة للارتفاع</strong>
+          <span>${forecastRegion}</span>
+        </div>
+      `;
+    }
+
+    function renderZones(items){
+      const box = document.getElementById("zonesBox");
+      if(!items.length){
+        box.innerHTML = `<div class="empty">لا توجد بيانات مناطق بعد.</div>`;
+        return;
+      }
+
+      box.innerHTML = items.map(z => `
+        <div class="item">
+          <div class="item-top">
+            <div class="item-title">${z.region}</div>
+            <span class="badge ${riskClass(z.avg_risk)}">${z.avg_risk}</span>
+          </div>
+          <div class="item-meta">
+            عدد الحالات: ${z.count}<br>
+            المؤكدة: ${z.confirmed}<br>
+            متوسط الشدة: ${z.avg_severity_percent}%<br>
+            أكثر مرض: ${z.top_disease}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderAlerts(items){
+      const box = document.getElementById("alertsBox");
+      if(!items.length){
+        box.innerHTML = `<div class="empty">لا توجد تنبيهات حالية.</div>`;
+        return;
+      }
+
+      box.innerHTML = items.map(a => `
+        <div class="item">
+          <div class="item-top">
+            <div class="item-title">${a.plant_ar || a.plant || "-"}</div>
+            <span class="badge ${riskClass(a.risk_score || 0)}">${a.spread_risk || "-"}</span>
+          </div>
+          <div class="item-meta">
+            المرض: ${a.disease_ar || a.disease || "-"}<br>
+            القرار: ${a.decision || "-"}<br>
+            الوقت: ${a.timestamp || "-"}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderRecent(items){
+      const box = document.getElementById("recentBox");
+      if(!items.length){
+        box.innerHTML = `<div class="empty">لا توجد حالات حديثة.</div>`;
+        return;
+      }
+
+      box.innerHTML = items.map(r => `
+        <div class="item">
+          <div class="item-top">
+            <div class="item-title">${r.plant_ar || r.plant || "-"}</div>
+            <span class="badge ${r.decision === "مؤكد" ? "low" : "medium"}">${r.decision || "-"}</span>
+          </div>
+          <div class="item-meta">
+            المرض: ${r.disease_ar || r.disease || "-"}<br>
+            الثقة: ${val(r.confidence)}%<br>
+            الوقت: ${r.timestamp || "-"}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderForecast(items){
+      const box = document.getElementById("forecastBox");
+      if(!items.length){
+        box.innerHTML = `<div class="empty">لا توجد بيانات توقع حالية.</div>`;
+        return;
+      }
+
+      box.innerHTML = items.map(f => `
+        <div class="item">
+          <div class="item-top">
+            <div class="item-title">${f.region}</div>
+            <span class="badge ${riskClass(f.risk_72h)}">${f.trend}</span>
+          </div>
+          <div class="item-meta">
+            المرض الأبرز: ${f.top_disease}<br>
+            24h: ${f.risk_24h}<br>
+            48h: ${f.risk_48h}<br>
+            72h: ${f.risk_72h}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function getJSON(url){
+      const res = await fetch(url);
+      return await res.json();
+    }
+
+    async function loadAll(){
+      try{
+        const [health, stats, mapData, alerts, recent, zones, weatherPoints, regionsGeo, forecast] = await Promise.all([
+          getJSON("/health"),
+          getJSON("/stats"),
+          getJSON("/map_data"),
+          getJSON("/alerts"),
+          getJSON("/recent"),
+          getJSON("/zones_summary"),
+          getJSON("/weather_points"),
+          getJSON("/regions_geojson"),
+          getJSON("/forecast_ai"),
+        ]);
+
+        rawStats = stats;
+        rawCases = mapData.items || [];
+        rawAlerts = alerts.items || [];
+        rawRecent = recent.items || [];
+        rawZones = zones.items || [];
+        rawRegionsGeoJSON = regionsGeo;
+        rawForecast = forecast.items || [];
+
+        document.getElementById("apiStatus").textContent = health.status === "ok" ? "Online" : "Offline";
+        document.getElementById("modelStatus").textContent = `${health.plant_num_classes}/${health.general_num_classes}/${health.tomato_num_classes}`;
+
+        updateKPIs(rawCases);
+        renderMarkers(rawCases);
+        renderHeatmap(rawCases);
+        renderWeatherPoints(weatherPoints.items || []);
+        renderRegionsLayer(rawRegionsGeoJSON, rawZones);
+        renderInsights(rawCases);
+        renderZones(rawZones);
+        renderAlerts(rawAlerts);
+        renderRecent(rawRecent);
+        renderForecast(rawForecast);
+
+      } catch(e){
+        document.getElementById("apiStatus").textContent = "Error";
+        document.getElementById("modelStatus").textContent = "Unavailable";
+        document.getElementById("insightsBox").innerHTML = `
+          <div class="insight">
+            <strong>تعذر تحميل البيانات</strong>
+            <span>تأكد من تشغيل السيرفر، ووجود المسارات: /map_data و /zones_summary و /regions_geojson و /forecast_ai.</span>
+          </div>
+        `;
+      }
+    }
+
+    function focusCritical(){
+      const critical = rawCases.filter(x => Number(x.risk_score || 0) >= 80);
+      const items = critical.length ? critical : rawCases;
+      renderMarkers(items);
+      renderHeatmap(items);
+    }
+
+    function resetView(){
+      renderMarkers(rawCases);
+      renderHeatmap(rawCases);
+      renderRegionsLayer(rawRegionsGeoJSON, rawZones);
+      map.setView([23.8859, 45.0792], 5);
+    }
+
+    function setupEvents(){
+      document.getElementById("refreshBtn").addEventListener("click", loadAll);
+      document.getElementById("focusCriticalBtn").addEventListener("click", focusCritical);
+      document.getElementById("resetViewBtn").addEventListener("click", resetView);
+
+      document.getElementById("toggleMarkersBtn").addEventListener("click", () => {
+        markersVisible = !markersVisible;
+        renderMarkers(rawCases);
+      });
+
+      document.getElementById("toggleHeatBtn").addEventListener("click", () => {
+        heatVisible = !heatVisible;
+        renderHeatmap(rawCases);
+      });
+
+      document.getElementById("toggleWeatherBtn").addEventListener("click", async () => {
+        weatherVisible = !weatherVisible;
+        const weatherPoints = await getJSON("/weather_points");
+        renderWeatherPoints(weatherPoints.items || []);
+      });
+
+      document.getElementById("toggleRegionsBtn").addEventListener("click", () => {
+        regionsVisible = !regionsVisible;
+        renderRegionsLayer(rawRegionsGeoJSON, rawZones);
+      });
+    }
+
+    initMap();
+    setupEvents();
+    loadAll();
+    setInterval(loadAll, 15000);
+  </script>
+</body>
+</html>

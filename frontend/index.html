@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phytologic AI</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:Tahoma, Arial, sans-serif; background:#f4f7fb; color:#1f2937; }
+    .page { max-width:1200px; margin:0 auto; padding:18px; }
+    .hero { background:linear-gradient(135deg,#0f2d52,#12664b); color:#fff; border-radius:20px; padding:24px; margin-bottom:18px; }
+    .card { background:#fff; border-radius:18px; padding:18px; box-shadow:0 8px 24px rgba(15,23,42,.08); margin-bottom:18px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .field { margin-bottom:14px; }
+    label { display:block; margin-bottom:8px; font-weight:700; }
+    input, select, button { width:100%; padding:12px 14px; border-radius:12px; border:1px solid #d7dfeb; font-size:15px; font-family:inherit; }
+    button { background:#0f766e; color:#fff; border:none; font-weight:700; cursor:pointer; }
+    button.secondary { background:#334155; }
+    .stat { background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px; }
+    .label { color:#64748b; font-size:13px; margin-bottom:6px; }
+    .value { font-size:20px; font-weight:800; }
+    .img-preview, .gradcam-img { width:100%; max-height:340px; object-fit:contain; border-radius:14px; border:1px solid #e5e7eb; background:#fff; }
+    .hidden { display:none !important; }
+    .note { background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8; border-radius:12px; padding:12px; line-height:1.8; }
+    .success-note { background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; border-radius:12px; padding:12px; line-height:1.8; }
+    .danger-note { background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; border-radius:12px; padding:12px; line-height:1.8; }
+    .program-item { border:1px solid #e5e7eb; border-radius:12px; padding:12px; margin-bottom:10px; background:#fafafa; }
+    .question { padding:12px; border:1px solid #fde68a; border-radius:12px; background:#fffbeb; margin-bottom:10px; }
+    .radio-row { display:flex; gap:16px; flex-wrap:wrap; margin-top:10px; }
+    @media (max-width:900px) { .grid, .grid-3 { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="hero">
+    <h1>Phytologic AI</h1>
+    <p>نظام تشخيص نهائي متعدد المراحل مع رفع الثقة بعد الأسئلة الخبيرة للطماطم.</p>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>رفع الصورة</h2>
+
+      <div class="field">
+        <label for="imageInput">صورة النبات</label>
+        <input id="imageInput" type="file" accept="image/*" />
+      </div>
+
+      <div class="field">
+        <label for="plantSelect">نوع النبات</label>
+        <select id="plantSelect">
+          <option value="auto">تحديد تلقائي</option>
+          <option value="Tomato">طماطم</option>
+          <option value="Potato">بطاطس</option>
+          <option value="Pepper">فلفل</option>
+          <option value="Corn">ذرة</option>
+          <option value="Grape">عنب</option>
+          <option value="Apple">تفاح</option>
+          <option value="Strawberry">فراولة</option>
+        </select>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label for="latInput">Latitude</label>
+          <input id="latInput" type="number" step="any" />
+        </div>
+        <div class="field">
+          <label for="lonInput">Longitude</label>
+          <input id="lonInput" type="number" step="any" />
+        </div>
+      </div>
+
+      <div class="grid">
+        <button id="analyzeBtn" type="button">تشخيص الآن</button>
+        <button id="resetBtn" class="secondary" type="button">إعادة تعيين</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>معاينة الصورة</h2>
+      <img id="previewImage" class="img-preview hidden" alt="preview">
+      <div id="previewPlaceholder">لم يتم اختيار صورة بعد.</div>
+    </div>
+  </div>
+
+  <div id="questionnaireCard" class="card hidden">
+    <h2>الأسئلة الإلزامية للطماطم</h2>
+    <div class="danger-note">أجب عن هذه الأسئلة لتحسين التشخيص ورفع الثقة عند وضوح المؤشرات.</div>
+    <div id="questionsContainer" style="margin-top:12px;"></div>
+    <button id="submitQuestionsBtn" type="button">إرسال الإجابات وإعادة التحليل</button>
+  </div>
+
+  <div id="resultsWrapper" class="hidden">
+    <div class="card">
+      <h2>النتيجة النهائية</h2>
+      <div class="grid-3">
+        <div class="stat"><div class="label">النظام</div><div id="systemUsed" class="value">-</div></div>
+        <div class="stat"><div class="label">النبات</div><div id="plantName" class="value">-</div></div>
+        <div class="stat"><div class="label">المرض</div><div id="diseaseName" class="value">-</div></div>
+      </div>
+
+      <div class="grid-3" style="margin-top:14px;">
+        <div class="stat"><div class="label">الثقة</div><div id="confidenceValue" class="value">-</div></div>
+        <div class="stat"><div class="label">القرار</div><div id="decisionValue" class="value">-</div></div>
+        <div class="stat"><div class="label">مطابقة المرض للمحصول</div><div id="cropMatchValue" class="value">-</div></div>
+      </div>
+
+      <div id="expertBox" class="hidden" style="margin-top:14px;"></div>
+      <div id="decisionNote" class="note" style="margin-top:14px;">-</div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>المرحلة الأولى: النبات</h2>
+        <div id="stage1Plant" class="note">-</div>
+        <img id="plantGradcam" class="gradcam-img" alt="plant gradcam" />
+      </div>
+
+      <div class="card">
+        <h2>تحليل الصورة</h2>
+        <div class="grid-3">
+          <div class="stat"><div class="label">الجودة</div><div id="imgQuality" class="value">-</div></div>
+          <div class="stat"><div class="label">الشدة</div><div id="severityLabel" class="value">-</div></div>
+          <div class="stat"><div class="label">نسبة الإصابة</div><div id="severityPercent" class="value">-</div></div>
+        </div>
+        <div id="bullseyeBox" class="note" style="margin-top:14px;">-</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Grad-CAM المرض</h2>
+        <img id="diseaseGradcam" class="gradcam-img" alt="disease gradcam" />
+      </div>
+
+      <div class="card">
+        <h2>الطقس وتوقع الانتشار</h2>
+        <div id="weatherCurrent" class="note">-</div>
+        <div id="spreadLevel" class="note" style="margin-top:12px;">-</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>التوصيات والبرنامج الحيوي</h2>
+        <div id="recommendationBox" class="note">-</div>
+        <div id="bioProgramBox" style="margin-top:12px;"></div>
+      </div>
+
+      <div class="card">
+        <h2>البرنامج الكيميائي</h2>
+        <div id="chemicalWarning" class="danger-note">-</div>
+        <div id="chemicalProgramBox" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const imageInput = document.getElementById("imageInput");
+const previewImage = document.getElementById("previewImage");
+const previewPlaceholder = document.getElementById("previewPlaceholder");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const resetBtn = document.getElementById("resetBtn");
+const submitQuestionsBtn = document.getElementById("submitQuestionsBtn");
+const questionnaireCard = document.getElementById("questionnaireCard");
+const questionsContainer = document.getElementById("questionsContainer");
+const resultsWrapper = document.getElementById("resultsWrapper");
+
+let latestFile = null;
+let latestLat = null;
+let latestLon = null;
+
+imageInput.addEventListener("change", () => {
+  const file = imageInput.files[0];
+  latestFile = file || null;
+  if (file) {
+    previewImage.src = URL.createObjectURL(file);
+    previewImage.classList.remove("hidden");
+    previewPlaceholder.classList.add("hidden");
+  } else {
+    previewImage.classList.add("hidden");
+    previewPlaceholder.classList.remove("hidden");
+  }
+});
+
+analyzeBtn.addEventListener("click", async () => {
+  if (!imageInput.files[0]) {
+    alert("اختر صورة أولًا.");
+    return;
+  }
+
+  latestFile = imageInput.files[0];
+  latestLat = document.getElementById("latInput").value.trim();
+  latestLon = document.getElementById("lonInput").value.trim();
+  await sendPrediction();
+});
+
+submitQuestionsBtn.addEventListener("click", async () => {
+  if (!latestFile) return;
+  const answers = collectAnswers();
+  await sendPrediction(answers);
+});
+
+resetBtn.addEventListener("click", () => {
+  imageInput.value = "";
+  document.getElementById("latInput").value = "";
+  document.getElementById("lonInput").value = "";
+  document.getElementById("plantSelect").value = "auto";
+  previewImage.classList.add("hidden");
+  previewPlaceholder.classList.remove("hidden");
+  questionnaireCard.classList.add("hidden");
+  resultsWrapper.classList.add("hidden");
+  document.getElementById("expertBox").classList.add("hidden");
+  document.getElementById("expertBox").innerHTML = "";
+});
+
+async function sendPrediction(questionnaireAnswers = null) {
+  const plantSelect = document.getElementById("plantSelect").value;
+  const formData = new FormData();
+
+  formData.append("file", latestFile);
+  formData.append("plant_name", plantSelect);
+
+  if (latestLat) formData.append("latitude", latestLat);
+  if (latestLon) formData.append("longitude", latestLon);
+  if (questionnaireAnswers) formData.append("questionnaire_answers", JSON.stringify(questionnaireAnswers));
+
+  const res = await fetch("/predict", {
+    method: "POST",
+    body: formData
+  });
+
+  const data = await res.json();
+  if (data.status === "error") {
+    alert(data.message || "حدث خطأ");
+    return;
+  }
+
+  render(data, !!questionnaireAnswers);
+}
+
+function collectAnswers() {
+  const answers = {};
+  ["q1_bullseye", "q2_small_many", "q3_gray_center", "q4_lower_leaves"].forEach(id => {
+    const checked = document.querySelector(`input[name="${id}"]:checked`);
+    if (checked) answers[id] = checked.value === "true";
+  });
+  return answers;
+}
+
+function render(data, questionnaireSubmitted = false) {
+  resultsWrapper.classList.remove("hidden");
+
+  setText("systemUsed", data.system_used);
+  setText("plantName", data.final_diagnosis.plant_ar);
+  setText("diseaseName", data.final_diagnosis.disease_ar);
+  setText("confidenceValue", `${Number(data.final_diagnosis.confidence).toFixed(2)}%`);
+  setText("decisionValue", data.final_diagnosis.decision);
+  setText("cropMatchValue", data.crop_disease_match ? "مطابق" : "غير مطابق");
+  setText("decisionNote", data.final_diagnosis.decision_note);
+
+  setText("stage1Plant", `${data.plant_stage.detected_plant_ar} - ثقة ${Number(data.plant_stage.confidence).toFixed(2)}%`);
+
+  document.getElementById("plantGradcam").src = data.gradcam.plant_stage_gradcam_url || "";
+  document.getElementById("diseaseGradcam").src = data.gradcam.disease_stage_gradcam_url || "";
+
+  setText("imgQuality", data.image_quality.quality_status);
+  setText("severityLabel", data.severity.label);
+  setText("severityPercent", `${data.severity.percent}%`);
+  setText("bullseyeBox", `Bullseye: ${data.bullseye_analysis.detected ? "نعم" : "لا"} | Score: ${data.bullseye_analysis.score}`);
+
+  if (data.weather && data.weather.current) {
+    setText("weatherCurrent", `حرارة: ${val(data.weather.current.temperature_2m)} | رطوبة: ${val(data.weather.current.relative_humidity_2m)} | مطر: ${val(data.weather.current.precipitation)} | رياح: ${val(data.weather.current.wind_speed_10m)}`);
+  } else {
+    setText("weatherCurrent", "لا توجد بيانات طقس");
+  }
+
+  setText("spreadLevel", `خطر الانتشار: ${data.spread_prediction.level} | الدرجة: ${val(data.spread_prediction.score)} | ${data.spread_prediction.reason}`);
+
+  setText("recommendationBox", data.recommendation);
+
+  renderBio(data.bio_program);
+  renderChemical(data.chemical_program);
+  renderQuestions(data.follow_up_questions, data.needs_questions);
+  renderExpertConfirmation(data, questionnaireSubmitted);
+}
+
+function renderExpertConfirmation(data, questionnaireSubmitted) {
+  const expertBox = document.getElementById("expertBox");
+  expertBox.classList.add("hidden");
+  expertBox.innerHTML = "";
+
+  if (!questionnaireSubmitted) return;
+
+  if (data.final_diagnosis.decision === "مؤكد") {
+    expertBox.className = "success-note";
+    expertBox.innerHTML = `تم اعتماد التشخيص بعد الأسئلة الخبيرة. الثقة الحالية: ${Number(data.final_diagnosis.confidence).toFixed(2)}%.`;
+    expertBox.classList.remove("hidden");
+  } else {
+    expertBox.className = "danger-note";
+    expertBox.innerHTML = `تمت إعادة الموازنة بعد الأسئلة، لكن النتيجة ما زالت غير مؤكدة. الثقة الحالية: ${Number(data.final_diagnosis.confidence).toFixed(2)}%.`;
+    expertBox.classList.remove("hidden");
+  }
+}
+
+function renderQuestions(questions, show) {
+  questionsContainer.innerHTML = "";
+
+  if (!show || !questions.length) {
+    questionnaireCard.classList.add("hidden");
+    return;
+  }
+
+  questionnaireCard.classList.remove("hidden");
+
+  questions.forEach(q => {
+    const div = document.createElement("div");
+    div.className = "question";
+    div.innerHTML = `
+      <p>${q.question}</p>
+      <div class="radio-row">
+        <label><input type="radio" name="${q.id}" value="true"> نعم</label>
+        <label><input type="radio" name="${q.id}" value="false"> لا</label>
+      </div>
+    `;
+    questionsContainer.appendChild(div);
+  });
+}
+
+function renderBio(program) {
+  const el = document.getElementById("bioProgramBox");
+  if (!program) {
+    el.innerHTML = "-";
+    return;
+  }
+
+  let html = `<div class="program-item"><strong>${program.title || "-"}</strong></div>`;
+  if (program.steps && program.steps.length) {
+    program.steps.forEach(step => {
+      html += `<div class="program-item">${step}</div>`;
+    });
+  }
+  if (program.materials && program.materials.length) {
+    program.materials.forEach(m => {
+      html += `<div class="program-item"><strong>${m.name}</strong><br>${m.dose_note || ""}</div>`;
+    });
+  }
+
+  el.innerHTML = html;
+}
+
+function renderChemical(program) {
+  setText("chemicalWarning", program?.warning || "-");
+  const el = document.getElementById("chemicalProgramBox");
+
+  if (!program || !program.products) {
+    el.innerHTML = "-";
+    return;
+  }
+
+  let html = "";
+  program.products.forEach(p => {
+    html += `
+      <div class="program-item">
+        <div><strong>المادة الفعالة:</strong> ${p.active_ingredient || "-"}</div>
+        <div><strong>مثال تجاري:</strong> ${p.trade_name_example || "-"}</div>
+        <div><strong>الجرعة:</strong> ${p.dose_template || "-"}</div>
+        <div><strong>الفاصل:</strong> ${p.interval_days || "-"}</div>
+        <div><strong>ملاحظة:</strong> ${p.note || "-"}</div>
+      </div>
+    `;
+  });
+
+  el.innerHTML = html || "<div class='program-item'>لا توجد منتجات.</div>";
+}
+
+function setText(id, value) {
+  document.getElementById(id).textContent = value ?? "-";
+}
+
+function val(v) {
+  return (v === null || v === undefined) ? "-" : v;
+}
+</script>
+</body>
+</html>

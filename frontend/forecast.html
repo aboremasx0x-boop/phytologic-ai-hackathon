@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phytologic AI - Forecast</title>
+
+  <style>
+    :root{
+      --bg:#07111f;
+      --bg2:#0a1730;
+      --panel:rgba(255,255,255,.05);
+      --panel2:rgba(255,255,255,.035);
+      --line:rgba(255,255,255,.08);
+      --text:#eef4ff;
+      --muted:#9fb2cf;
+      --blue:#3b82f6;
+      --blue2:#60a5fa;
+      --green:#22c55e;
+      --yellow:#f59e0b;
+      --red:#ef4444;
+      --shadow:0 12px 30px rgba(0,0,0,.22);
+      --radius:22px;
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:Tahoma, Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(59,130,246,.10), transparent 18%),
+        radial-gradient(circle at top left, rgba(96,165,250,.08), transparent 18%),
+        linear-gradient(180deg,var(--bg) 0%, var(--bg2) 100%);
+      min-height:100vh;
+    }
+
+    .app{
+      display:grid;
+      grid-template-columns:280px 1fr;
+      min-height:100vh;
+    }
+
+    .sidebar{
+      background:linear-gradient(180deg, rgba(10,26,54,.97), rgba(8,20,42,.97));
+      border-left:1px solid var(--line);
+      padding:18px 16px;
+      position:sticky;
+      top:0;
+      height:100vh;
+      overflow:auto;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 16px;
+      border-radius:20px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+      margin-bottom:16px;
+    }
+
+    .brand h1{
+      margin:0;
+      font-size:20px;
+      line-height:1.2;
+    }
+
+    .brand small{
+      display:block;
+      color:var(--muted);
+      margin-top:4px;
+      font-size:11px;
+    }
+
+    .brand-logo{
+      width:48px;
+      height:48px;
+      border-radius:15px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg, rgba(59,130,246,.28), rgba(96,165,250,.16));
+      font-size:22px;
+    }
+
+    .nav{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-bottom:16px;
+    }
+
+    .nav a{
+      color:var(--text);
+      text-decoration:none;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid transparent;
+      transition:.18s ease;
+      font-size:14px;
+    }
+
+    .nav a:hover,
+    .nav a.active{
+      background:linear-gradient(90deg, rgba(59,130,246,.16), rgba(96,165,250,.08));
+      border-color:var(--line);
+    }
+
+    .side-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      box-shadow:var(--shadow);
+      margin-bottom:14px;
+    }
+
+    .side-card h3{
+      margin:0 0 10px;
+      font-size:14px;
+    }
+
+    .side-row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:8px 0;
+      border-bottom:1px dashed rgba(255,255,255,.06);
+      font-size:13px;
+    }
+
+    .side-row:last-child{border-bottom:none}
+    .side-row span:first-child{color:var(--muted)}
+
+    .main{
+      padding:18px;
+      display:grid;
+      gap:16px;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns:.95fr 1.05fr;
+      gap:16px;
+    }
+
+    .panel{
+      background:linear-gradient(180deg, var(--panel), var(--panel2));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .panel-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      font-weight:700;
+    }
+
+    .panel-body{
+      padding:16px;
+    }
+
+    .hero-center{
+      background:linear-gradient(135deg, rgba(59,130,246,.18), rgba(96,165,250,.10));
+      border:1px solid var(--line);
+      border-radius:24px;
+      box-shadow:var(--shadow);
+      padding:22px;
+    }
+
+    .hero-center h2{
+      margin:0 0 10px;
+      font-size:22px;
+      line-height:1.35;
+      text-align:center;
+    }
+
+    .hero-center p{
+      margin:0;
+      color:var(--muted);
+      text-align:center;
+      line-height:1.9;
+      font-size:14px;
+    }
+
+    .hero-actions{
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:18px;
+    }
+
+    .btn{
+      border:none;
+      border-radius:12px;
+      padding:10px 14px;
+      font-weight:700;
+      font-family:inherit;
+      cursor:pointer;
+      transition:.18s ease;
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg, var(--blue), var(--blue2));
+      color:#fff;
+    }
+
+    .btn-light{
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+
+    .btn:hover{transform:translateY(-1px)}
+
+    .brief-block{
+      border:1px solid rgba(255,255,255,.06);
+      background:rgba(255,255,255,.03);
+      border-radius:14px;
+      padding:12px;
+      margin-bottom:10px;
+    }
+
+    .brief-block:last-child{margin-bottom:0}
+    .brief-title{
+      font-weight:700;
+      margin-bottom:6px;
+    }
+    .brief-text{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.8;
+    }
+
+    .stats-grid{
+      display:grid;
+      grid-template-columns:repeat(6,1fr);
+      gap:14px;
+    }
+
+    .stat-card{
+      background:linear-gradient(180deg, var(--panel), var(--panel2));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .stat-card::before{
+      content:"";
+      position:absolute;
+      top:0;
+      right:0;
+      left:0;
+      height:3px;
+      background:linear-gradient(90deg, rgba(59,130,246,.2), rgba(96,165,250,.95));
+    }
+
+    .stat-label{
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:10px;
+    }
+
+    .stat-value{
+      font-size:32px;
+      font-weight:800;
+      line-height:1;
+      margin-bottom:8px;
+    }
+
+    .stat-sub{
+      color:#c7d7f0;
+      font-size:12px;
+    }
+
+    .forecast-wrapper{
+      display:grid;
+      gap:14px;
+    }
+
+    .forecast-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.025));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:var(--shadow);
+    }
+
+    .forecast-card-top{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+      margin-bottom:12px;
+    }
+
+    .forecast-card-top h3{
+      margin:0 0 6px;
+      font-size:18px;
+    }
+
+    .forecast-card-top p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.8;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(59,130,246,.14);
+      color:#cfe5ff;
+      font-size:12px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+
+    .forecast-grid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+    }
+
+    .metric{
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .metric span{
+      display:block;
+      color:var(--muted);
+      font-size:12px;
+      margin-bottom:6px;
+    }
+
+    .metric strong{
+      font-size:24px;
+      font-weight:800;
+    }
+
+    .empty-state{
+      background:rgba(255,255,255,.03);
+      border:1px dashed rgba(255,255,255,.10);
+      border-radius:18px;
+      padding:20px;
+      text-align:center;
+      color:var(--muted);
+      line-height:1.8;
+    }
+
+    @media (max-width:1400px){
+      .stats-grid{grid-template-columns:repeat(3,1fr)}
+    }
+
+    @media (max-width:1100px){
+      .app{grid-template-columns:1fr}
+      .sidebar{
+        position:relative;
+        height:auto;
+        border-left:none;
+        border-bottom:1px solid var(--line);
+      }
+      .hero{grid-template-columns:1fr}
+    }
+
+    @media (max-width:700px){
+      .stats-grid{grid-template-columns:1fr 1fr}
+      .forecast-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div>
+          <h1>Phytologic AI</h1>
+          <small>Forecast Operations Layer</small>
+        </div>
+        <div class="brand-logo">📡</div>
+      </div>
+
+      <nav class="nav">
+        <a href="/national_center">المركز الوطني</a>
+        <a href="/ui">التشخيص الذكي</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/alerts_page">Alerts</a>
+        <a href="/forecast" class="active">Forecast</a>
+        <a href="/forecast_ai_page">Forecast AI</a>
+        <a href="/reports_center">Reports</a>
+      </nav>
+
+      <div class="side-card">
+        <h3>Forecast Status</h3>
+        <div class="side-row"><span>API</span><span id="apiStatus">...</span></div>
+        <div class="side-row"><span>Models</span><span id="modelsStatus">...</span></div>
+        <div class="side-row"><span>آخر تحديث</span><span id="lastUpdate">--</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="hero">
+        <div class="panel">
+          <div class="panel-head">Forecast Brief</div>
+          <div class="panel-body">
+            <div class="brief-block">
+              <div class="brief-title">المنطقة الأعلى أولوية</div>
+              <div class="brief-text" id="briefTopRegion">جاري التحليل...</div>
+            </div>
+            <div class="brief-block">
+              <div class="brief-title">المقارنة المباشرة</div>
+              <div class="brief-text" id="briefCompare">جاري التحليل...</div>
+            </div>
+            <div class="brief-block">
+              <div class="brief-title">السياق المرتبط</div>
+              <div class="brief-text" id="briefContext">جاري التحليل...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-center">
+          <h2>Forecast Center — 24h / 48h / 72h Outlook</h2>
+          <p>
+            واجهة تشغيلية لتوقعات المناطق خلال الساعات القادمة، مبنية مباشرة على بيانات المنصة
+            لعرض الأولويات، أعلى المناطق، وأقوى الأمراض المتوقعة.
+          </p>
+
+          <div class="hero-actions">
+            <button id="refreshForecastBtn" class="btn btn-primary" type="button">تحديث Forecast</button>
+            <button id="highOnlyBtn" class="btn btn-light" type="button">عرض المرتفعة فقط</button>
+            <button id="resetForecastBtn" class="btn btn-light" type="button">إعادة الضبط</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">المناطق المتوقعة</div>
+          <div class="stat-value" id="statRegions">0</div>
+          <div class="stat-sub">عدد المناطق داخل محرك التوقع</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">أعلى 24h</div>
+          <div class="stat-value" id="stat24">0</div>
+          <div class="stat-sub">أعلى قيمة متوقعة خلال 24 ساعة</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">أعلى 48h</div>
+          <div class="stat-value" id="stat48">0</div>
+          <div class="stat-sub">أعلى قيمة متوقعة خلال 48 ساعة</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">أعلى 72h</div>
+          <div class="stat-value" id="stat72">0</div>
+          <div class="stat-sub">أعلى قيمة متوقعة خلال 72 ساعة</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">المنطقة الأولى</div>
+          <div class="stat-value" id="statTopRegion">-</div>
+          <div class="stat-sub">الأعلى في المشهد الحالي</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-label">أعلى مرض</div>
+          <div class="stat-value" id="statTopDisease">-</div>
+          <div class="stat-sub">المرض الأبرز في التوقع</div>
+        </div>
+      </section>
+
+      <section class="forecast-wrapper" id="forecast_list">
+        <div class="empty-state">جاري تحميل بيانات Forecast...</div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    let rawForecast = [];
+
+    function setText(id, value){
+      const el = document.getElementById(id);
+      if (el) el.textContent = value ?? "-";
+    }
+
+    function riskLevelLabel(v){
+      const n = Number(v || 0);
+      if (n >= 80) return "مرتفع جدًا";
+      if (n >= 45) return "متوسط";
+      return "منخفض";
+    }
+
+    async function getJSON(url){
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status} @ ${url}`);
+      return await res.json();
+    }
+
+    function renderBrief(items){
+      if (!items.length){
+        setText("briefTopRegion", "لا توجد بيانات");
+        setText("briefCompare", "لا توجد بيانات للمقارنة");
+        setText("briefContext", "لا توجد بيانات مرتبطة");
+        return;
+      }
+
+      const top = items[0];
+      const second = items[1];
+
+      setText(
+        "briefTopRegion",
+        `${top.region} — خطر 72 ساعة: ${top.risk_72h} | المرض: ${top.top_disease}`
+      );
+
+      setText(
+        "briefCompare",
+        second
+          ? `${top.region} أعلى من ${second.region} حاليًا في أفق 72 ساعة.`
+          : "لا توجد منطقة ثانية للمقارنة حاليًا."
+      );
+
+      setText(
+        "briefContext",
+        `الاتجاه الحالي: ${top.trend} | مستوى الخطر: ${riskLevelLabel(top.risk_72h)}`
+      );
+    }
+
+    function renderStats(items){
+      const top = items[0] || null;
+
+      setText("statRegions", items.length);
+      setText("stat24", top ? top.risk_24h : 0);
+      setText("stat48", top ? top.risk_48h : 0);
+      setText("stat72", top ? top.risk_72h : 0);
+      setText("statTopRegion", top ? top.region : "-");
+      setText("statTopDisease", top ? top.top_disease : "-");
+    }
+
+    function renderForecastCards(items){
+      const container = document.getElementById("forecast_list");
+      if (!container) return;
+
+      if (!items.length){
+        container.innerHTML = `<div class="empty-state">لا توجد بيانات Forecast حالياً.</div>`;
+        return;
+      }
+
+      container.innerHTML = items.map(item => `
+        <div class="forecast-card">
+          <div class="forecast-card-top">
+            <div>
+              <h3>${item.region}</h3>
+              <p>المرض الأبرز: ${item.top_disease}</p>
+            </div>
+            <span class="badge">${item.trend}</span>
+          </div>
+
+          <div class="forecast-grid">
+            <div class="metric">
+              <span>24h</span>
+              <strong>${item.risk_24h}</strong>
+            </div>
+            <div class="metric">
+              <span>48h</span>
+              <strong>${item.risk_48h}</strong>
+            </div>
+            <div class="metric">
+              <span>72h</span>
+              <strong>${item.risk_72h}</strong>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function applyHighOnlyFilter(){
+      const filtered = rawForecast.filter(x => Number(x.risk_72h || 0) >= 45);
+      renderBrief(filtered);
+      renderStats(filtered);
+      renderForecastCards(filtered);
+    }
+
+    function resetForecastView(){
+      renderBrief(rawForecast);
+      renderStats(rawForecast);
+      renderForecastCards(rawForecast);
+    }
+
+    async function loadForecast(){
+      try {
+        const [forecastData, health] = await Promise.all([
+          getJSON("/forecast_ai"),
+          getJSON("/health")
+        ]);
+
+        rawForecast = Array.isArray(forecastData.items) ? forecastData.items : [];
+
+        setText("apiStatus", health.status === "ok" ? "Online" : "Error");
+        setText("modelsStatus", `${health.plant_num_classes}/${health.general_num_classes}/${health.tomato_num_classes}`);
+
+        renderBrief(rawForecast);
+        renderStats(rawForecast);
+        renderForecastCards(rawForecast);
+
+        const updated = document.getElementById("lastUpdate");
+        if (updated) updated.textContent = new Date().toLocaleString("ar-SA");
+
+      } catch (e) {
+        console.error("Forecast load error:", e);
+        setText("apiStatus", "Error");
+        renderForecastCards([]);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const refreshBtn = document.getElementById("refreshForecastBtn");
+      const highBtn = document.getElementById("highOnlyBtn");
+      const resetBtn = document.getElementById("resetForecastBtn");
+
+      if (refreshBtn) refreshBtn.addEventListener("click", loadForecast);
+      if (highBtn) highBtn.addEventListener("click", applyHighOnlyFilter);
+      if (resetBtn) resetBtn.addEventListener("click", resetForecastView);
+
+      loadForecast();
+    });
+  </script>
+</body>
+</html>

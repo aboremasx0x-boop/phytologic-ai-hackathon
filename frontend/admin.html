@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phytologic AI - Admin Center</title>
+
+  <style>
+    :root{
+      --bg:#08162b;
+      --panel:#102445;
+      --panel2:#132a50;
+      --line:rgba(255,255,255,.08);
+      --text:#eef4ff;
+      --muted:#9fb2cf;
+      --blue:#38bdf8;
+      --green:#22c55e;
+      --yellow:#f59e0b;
+      --red:#ef4444;
+      --pink:#ec4899;
+      --violet:#8b5cf6;
+      --shadow:0 12px 28px rgba(0,0,0,.25);
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:Tahoma, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(139,92,246,.09), transparent 20%),
+        radial-gradient(circle at top right, rgba(56,189,248,.08), transparent 18%),
+        linear-gradient(180deg,#071224 0%, #09172d 100%);
+      color:var(--text);
+    }
+
+    .app{
+      display:grid;
+      grid-template-columns:280px 1fr;
+      min-height:100vh;
+    }
+
+    .sidebar{
+      background:linear-gradient(180deg, rgba(15,37,70,.96), rgba(10,28,54,.96));
+      border-left:1px solid var(--line);
+      padding:18px 16px;
+      position:sticky;
+      top:0;
+      height:100vh;
+      overflow:auto;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 16px;
+      border-radius:20px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      margin-bottom:16px;
+      box-shadow:var(--shadow);
+    }
+
+    .brand h1{
+      margin:0;
+      font-size:18px;
+      line-height:1.2;
+    }
+
+    .brand small{
+      display:block;
+      color:var(--muted);
+      margin-top:4px;
+      font-size:11px;
+    }
+
+    .brand-logo{
+      width:46px;
+      height:46px;
+      border-radius:14px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg, rgba(139,92,246,.25), rgba(56,189,248,.18));
+      font-size:22px;
+    }
+
+    .nav{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-bottom:16px;
+    }
+
+    .nav a{
+      color:var(--text);
+      text-decoration:none;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid transparent;
+      transition:.18s ease;
+      font-size:14px;
+    }
+
+    .nav a:hover,
+    .nav a.active{
+      background:linear-gradient(90deg, rgba(139,92,246,.16), rgba(56,189,248,.10));
+      border-color:var(--line);
+    }
+
+    .side-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      margin-bottom:14px;
+      box-shadow:var(--shadow);
+    }
+
+    .side-card h3{
+      margin:0 0 10px;
+      font-size:14px;
+    }
+
+    .side-row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:7px 0;
+      border-bottom:1px dashed rgba(255,255,255,.06);
+      font-size:13px;
+    }
+
+    .side-row:last-child{border-bottom:none}
+    .side-row span:first-child{color:var(--muted)}
+
+    .main{
+      padding:18px;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .hero-main{
+      background:linear-gradient(135deg, rgba(139,92,246,.18), rgba(56,189,248,.15));
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:22px;
+      box-shadow:var(--shadow);
+    }
+
+    .hero-main h2{
+      margin:0 0 10px;
+      font-size:24px;
+      line-height:1.3;
+    }
+
+    .hero-main p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.9;
+      font-size:14px;
+    }
+
+    .hero-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:16px;
+    }
+
+    .btn{
+      border:none;
+      border-radius:12px;
+      padding:10px 14px;
+      font-weight:bold;
+      cursor:pointer;
+      transition:.18s ease;
+      font-family:inherit;
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg,#7c3aed,#2563eb);
+      color:#fff;
+    }
+
+    .btn-light{
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+
+    .btn:hover{transform:translateY(-1px)}
+
+    .panel{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .panel-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      font-weight:bold;
+    }
+
+    .panel-body{
+      padding:16px;
+    }
+
+    .kpi-grid{
+      display:grid;
+      grid-template-columns:repeat(6,1fr);
+      gap:14px;
+      margin-bottom:16px;
+    }
+
+    .kpi{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:var(--shadow);
+      position:relative;
+    }
+
+    .kpi::before{
+      content:"";
+      position:absolute;
+      inset:0 0 auto 0;
+      height:3px;
+      border-radius:18px 18px 0 0;
+      background:linear-gradient(90deg, rgba(139,92,246,.2), rgba(56,189,248,.95));
+    }
+
+    .kpi-label{
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:10px;
+    }
+
+    .kpi-value{
+      font-size:30px;
+      font-weight:800;
+      line-height:1;
+      margin-bottom:8px;
+    }
+
+    .kpi-sub{
+      font-size:12px;
+      color:#c8d6eb;
+    }
+
+    .layout{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .actions-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+
+    .action-box{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      background:rgba(255,255,255,.03);
+      padding:14px;
+    }
+
+    .action-box h4{
+      margin:0 0 8px;
+      font-size:15px;
+    }
+
+    .action-box p{
+      margin:0 0 12px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.8;
+    }
+
+    .status-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+
+    .status-box{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      padding:14px;
+      background:rgba(255,255,255,.03);
+    }
+
+    .status-label{
+      color:var(--muted);
+      font-size:12px;
+      margin-bottom:8px;
+    }
+
+    .status-value{
+      font-size:20px;
+      font-weight:800;
+    }
+
+    .list{
+      max-height:420px;
+      overflow:auto;
+    }
+
+    .item{
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      background:rgba(255,255,255,.03);
+      padding:12px;
+      margin-bottom:10px;
+    }
+
+    .item:last-child{margin-bottom:0}
+
+    .item-top{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:8px;
+    }
+
+    .item-title{
+      font-weight:bold;
+      font-size:14px;
+    }
+
+    .item-meta{
+      color:var(--muted);
+      line-height:1.8;
+      font-size:13px;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:bold;
+      white-space:nowrap;
+    }
+
+    .ok{background:rgba(34,197,94,.14);color:#86efac}
+    .warn{background:rgba(245,158,11,.14);color:#fde68a}
+    .bad{background:rgba(239,68,68,.14);color:#fca5a5}
+    .violet{background:rgba(139,92,246,.14);color:#c4b5fd}
+
+    .insight{
+      padding:12px;
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      background:rgba(255,255,255,.03);
+      margin-bottom:10px;
+    }
+
+    .insight:last-child{margin-bottom:0}
+
+    .insight strong{
+      display:block;
+      margin-bottom:6px;
+    }
+
+    .insight span{
+      color:var(--muted);
+      line-height:1.8;
+      font-size:13px;
+    }
+
+    .empty{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.8;
+    }
+
+    .footer{
+      color:var(--muted);
+      font-size:12px;
+      text-align:center;
+      margin-top:12px;
+    }
+
+    @media (max-width:1450px){
+      .kpi-grid{grid-template-columns:repeat(3,1fr)}
+    }
+
+    @media (max-width:1100px){
+      .app{grid-template-columns:1fr}
+      .sidebar{
+        position:relative;
+        height:auto;
+        border-left:none;
+        border-bottom:1px solid var(--line);
+      }
+      .hero,.layout{grid-template-columns:1fr}
+    }
+
+    @media (max-width:700px){
+      .kpi-grid{grid-template-columns:1fr 1fr}
+      .actions-grid,.status-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div>
+          <h1>Phytologic AI</h1>
+          <small>Admin Control Layer</small>
+        </div>
+        <div class="brand-logo">⚙️</div>
+      </div>
+
+      <div class="nav">
+        <a href="/national_center">المركز الوطني</a>
+        <a href="/ui">التشخيص الذكي</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/alerts_page">Alerts</a>
+        <a href="/forecast_ai">Forecast AI</a>
+        <a href="/admin" class="active">Admin</a>
+        <a href="/reports_center">Reports</a>
+      </div>
+
+      <div class="side-card">
+        <h3>Admin Snapshot</h3>
+        <div class="side-row"><span>API</span><span id="apiStatus">...</span></div>
+        <div class="side-row"><span>Models</span><span id="modelStatus">...</span></div>
+        <div class="side-row"><span>Health Check</span><span id="healthStatus">...</span></div>
+        <div class="side-row"><span>آخر تحديث</span><span id="lastUpdateLabel">--:--</span></div>
+      </div>
+
+      <div class="side-card">
+        <h3>System Pulse</h3>
+        <div class="side-row"><span>التنبيهات</span><span id="alertsMini">0</span></div>
+        <div class="side-row"><span>المناطق</span><span id="zonesMini">0</span></div>
+        <div class="side-row"><span>Forecast Rows</span><span id="forecastMini">0</span></div>
+        <div class="side-row"><span>Recent Cases</span><span id="recentMini">0</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="hero">
+        <div class="hero-main">
+          <h2>Admin Center — Platform Governance & Control</h2>
+          <p>
+            لوحة إدارة فريدة مخصصة لمراقبة سلامة المنصة، حالة النماذج، المؤشرات التشغيلية، الضغط على المناطق، وأهم عناصر المتابعة الإدارية والتنفيذية.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" id="reloadBtn">تحديث الإدارة</button>
+            <button class="btn btn-light" id="printBtn">Print View</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">Admin Intelligence</div>
+          <div class="panel-body" id="adminBrief">
+            <div class="insight">
+              <strong>جاري التحليل</strong>
+              <span>سيتم إنشاء ملخص إداري ذكي بعد تحميل البيانات.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">إجمالي الحالات</div>
+          <div class="kpi-value" id="kpiTotal">0</div>
+          <div class="kpi-sub">إجمالي الحالات المسجلة</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">المؤكدة</div>
+          <div class="kpi-value" id="kpiConfirmed">0</div>
+          <div class="kpi-sub">قرارات نهائية مؤكدة</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">غير المؤكدة</div>
+          <div class="kpi-value" id="kpiUncertain">0</div>
+          <div class="kpi-sub">تحتاج مراجعة إضافية</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">متوسط الخطر</div>
+          <div class="kpi-value" id="kpiRisk">0</div>
+          <div class="kpi-sub">متوسط المخاطر الحالية</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">أعلى منطقة</div>
+          <div class="kpi-value" id="kpiTopRegion">-</div>
+          <div class="kpi-sub">أكثر منطقة ضغطًا</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">أعلى Forecast 72h</div>
+          <div class="kpi-value" id="kpiForecast">0</div>
+          <div class="kpi-sub">أعلى توقع انتشار</div>
+        </div>
+      </section>
+
+      <section class="layout">
+        <div class="panel">
+          <div class="panel-head">Control Actions</div>
+          <div class="panel-body">
+            <div class="actions-grid">
+              <div class="action-box">
+                <h4>System Refresh</h4>
+                <p>إعادة تحميل جميع المؤشرات التشغيلية وقراءة آخر البيانات من الـ API.</p>
+                <button class="btn btn-primary" onclick="loadAdmin()">تشغيل</button>
+              </div>
+
+              <div class="action-box">
+                <h4>Open National Center</h4>
+                <p>الانتقال إلى لوحة المركز الوطني لمراجعة الخريطة وطبقات الخطر.</p>
+                <button class="btn btn-light" onclick="window.location.href='/national_center'">فتح</button>
+              </div>
+
+              <div class="action-box">
+                <h4>Open Alerts Center</h4>
+                <p>عرض التنبيهات الحية والتعامل مع الحالات الأعلى أولوية.</p>
+                <button class="btn btn-light" onclick="window.location.href='/alerts_page'">فتح</button>
+              </div>
+
+              <div class="action-box">
+                <h4>Open Reports Center</h4>
+                <p>الوصول إلى التقارير التنفيذية وتلخيص الأداء الحالي للمنصة.</p>
+                <button class="btn btn-light" onclick="window.location.href='/reports_center'">فتح</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">System Status Matrix</div>
+          <div class="panel-body">
+            <div class="status-grid">
+              <div class="status-box">
+                <div class="status-label">API Status</div>
+                <div class="status-value" id="statusApi">...</div>
+              </div>
+
+              <div class="status-box">
+                <div class="status-label">Models Loaded</div>
+                <div class="status-value" id="statusModels">...</div>
+              </div>
+
+              <div class="status-box">
+                <div class="status-label">Forecast Engine</div>
+                <div class="status-value" id="statusForecast">Live</div>
+              </div>
+
+              <div class="status-box">
+                <div class="status-label">Alerts Engine</div>
+                <div class="status-value" id="statusAlerts">Live</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="layout">
+        <div class="panel">
+          <div class="panel-head">Regional Risk Oversight</div>
+          <div class="panel-body list" id="zonesBox">
+            <div class="empty">جاري تحميل المناطق...</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">Forecast Oversight</div>
+          <div class="panel-body list" id="forecastBox">
+            <div class="empty">جاري تحميل التوقع...</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="layout">
+        <div class="panel">
+          <div class="panel-head">Recent Operational Events</div>
+          <div class="panel-body list" id="recentBox">
+            <div class="empty">جاري تحميل الحالات...</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">Critical Admin Feed</div>
+          <div class="panel-body list" id="alertsBox">
+            <div class="empty">جاري تحميل التنبيهات...</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="footer">
+        Phytologic AI — Admin Center
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function nowTime(){
+      document.getElementById("lastUpdateLabel").textContent = new Date().toLocaleTimeString("ar-SA");
+    }
+
+    function animateNumber(id, target){
+      const el = document.getElementById(id);
+      const end = Number(target) || 0;
+      const start = Number(el.dataset.current || 0);
+      const duration = 350;
+      const steps = 20;
+      const stepValue = (end - start) / steps;
+      let current = start;
+      let step = 0;
+
+      const timer = setInterval(() => {
+        step++;
+        current += stepValue;
+        if(step >= steps){
+          el.textContent = end;
+          el.dataset.current = end;
+          clearInterval(timer);
+        } else {
+          el.textContent = Math.round(current);
+        }
+      }, duration / steps);
+    }
+
+    function riskClass(score){
+      const s = Number(score) || 0;
+      if(s >= 85) return "violet";
+      if(s >= 70) return "bad";
+      if(s >= 45) return "warn";
+      return "ok";
+    }
+
+    function riskLabel(score){
+      const s = Number(score) || 0;
+      if(s >= 85) return "حرج";
+      if(s >= 70) return "مرتفع";
+      if(s >= 45) return "متوسط";
+      return "منخفض";
+    }
+
+    async function getJSON(url){
+      const res = await fetch(url);
+      return await res.json();
+    }
+
+    function renderKPIs(stats, zones, forecast, alerts, recent){
+      const avgRisk = zones.length
+        ? Math.round(zones.reduce((a,b)=>a + Number(b.avg_risk || 0), 0) / zones.length)
+        : 0;
+
+      animateNumber("kpiTotal", stats.total_predictions || 0);
+      animateNumber("kpiConfirmed", stats.confirmed || 0);
+      animateNumber("kpiUncertain", stats.uncertain || 0);
+      animateNumber("kpiRisk", avgRisk);
+      animateNumber("kpiForecast", Math.round(forecast[0]?.risk_72h || 0));
+
+      document.getElementById("kpiTopRegion").textContent = zones[0]?.region || "-";
+
+      document.getElementById("alertsMini").textContent = alerts.length;
+      document.getElementById("zonesMini").textContent = zones.length;
+      document.getElementById("forecastMini").textContent = forecast.length;
+      document.getElementById("recentMini").textContent = recent.length;
+    }
+
+    function renderBrief(stats, zones, forecast, alerts){
+      const box = document.getElementById("adminBrief");
+      const topZone = zones[0]?.region || "غير متوفر";
+      const topZoneRisk = zones[0]?.avg_risk || 0;
+      const topForecast = forecast[0]?.region || "غير متوفر";
+      const topForecastRisk = forecast[0]?.risk_72h || 0;
+      const topDisease = stats.top_diseases?.[0]?.disease || "غير متوفر";
+
+      box.innerHTML = `
+        <div class="insight">
+          <strong>الوضع التشغيلي</strong>
+          <span>النظام يعمل حاليًا بعدد حالات إجمالي يبلغ ${stats.total_predictions || 0}، مع ${alerts.length} تنبيهًا نشطًا في التغذية الحالية.</span>
+        </div>
+        <div class="insight">
+          <strong>مؤشر المخاطر</strong>
+          <span>أعلى منطقة ضغط حاليًا هي ${topZone} بمتوسط خطر ${topZoneRisk}، بينما أعلى توقع خلال 72 ساعة هو ${topForecast} بمستوى ${topForecastRisk}.</span>
+        </div>
+        <div class="insight">
+          <strong>الرصد الإداري</strong>
+          <span>المرض الأكثر حضورًا في النظام حاليًا هو ${topDisease}. يوصى بمراجعة التنبيهات الحرجة أولًا ثم المناطق ذات الاتجاه التصاعدي.</span>
+        </div>
+      `;
+    }
+
+    function renderZones(items){
+      const box = document.getElementById("zonesBox");
+      if(!items.length){
+        box.innerHTML = `<div class="empty">لا توجد بيانات مناطق.</div>`;
+        return;
+      }
+
+      box.innerHTML = items.map(z => `
+        <div class="item">
+          <div class="item-top">
+            <div class="item-title">${z.region}</div>
+            <span class="badge ${riskClass(z.avg_risk)}">${riskLabel(z.avg_risk)}</span>
+          </div>
+          <div class="item-meta">
+            عدد الحالات: ${z.count}<br>
+            المؤكدة: ${z.confirmed}<br>
+            متوسط الخطر: ${z.avg_risk}<br>
+            متوسط الشدة: ${z.avg_severity_percent}%<br>
+            أكثر مرض: ${z.top_disease}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderForecast(items){
+      const box = document.getElementById("forecastBox");
+      if(!items.length){
+        box.innerHTML = `<div class="empty">لا توجد بيانات Forecast حالية.</div>`;
+        return;
+      }
+
+      box.innerHTML = items.map(f => `
+        <div class="item">
+          <div class="item-top">
+            <div class="item-title">${f.region}</div>
+            <span class="badge ${riskClass(f.risk_72h)}">${f.trend}</span>
+          </div>
+          <div class="item-meta">
+            المرض الأبرز: ${f.top_disease}<br>
+            24h: ${f.risk_24h}<br>
+            48h: ${f.risk_48h}<br>
+            72h: ${f.risk_72h}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderRecent(items){
+      const box = document.getElementById("recentBox");
+      if(!items.length){
+        box.innerHTML = `<div class="empty">لا توجد حالات حديثة.</div>`;
+        return;
+      }
+
+      box.innerHTML = items.map(r => `
+        <div class="item">
+          <div class="item-top">
+            <div class="item-title">${r.plant_ar || r.plant || "-"}</div>
+            <span class="badge ${r.decision === "مؤكد" ? "ok" : "warn"}">${r.decision || "-"}</span>
+          </div>
+          <div class="item-meta">
+            المرض: ${r.disease_ar || r.disease || "-"}<br>
+            الثقة: ${r.confidence ?? "-"}%<br>
+            الخطر: ${r.spread_risk || "-"}<br>
+            المنطقة: ${r.region || "غير محددة"}<br>
+            الوقت: ${r.timestamp || "-"}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderAlerts(items){
+      const box = document.getElementById("alertsBox");
+      if(!items.length){
+        box.innerHTML = `<div class="empty">لا توجد تنبيهات حالية.</div>`;
+        return;
+      }
+
+      box.innerHTML = items.map(a => `
+        <div class="item">
+          <div class="item-top">
+            <div class="item-title">${a.plant_ar || a.plant || "-"}</div>
+            <span class="badge ${riskClass(a.risk_score || 0)}">${a.spread_risk || "-"}</span>
+          </div>
+          <div class="item-meta">
+            المرض: ${a.disease_ar || a.disease || "-"}<br>
+            القرار: ${a.decision || "-"}<br>
+            المنطقة: ${a.region || "غير محددة"}<br>
+            الوقت: ${a.timestamp || "-"}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function loadAdmin(){
+      try{
+        const [health, stats, alertsRes, zonesRes, forecastRes, recentRes] = await Promise.all([
+          getJSON("/health"),
+          getJSON("/stats"),
+          getJSON("/alerts"),
+          getJSON("/zones_summary"),
+          getJSON("/forecast_ai"),
+          getJSON("/recent"),
+        ]);
+
+        const alerts = alertsRes.items || [];
+        const zones = zonesRes.items || [];
+        const forecast = forecastRes.items || [];
+        const recent = recentRes.items || [];
+
+        document.getElementById("apiStatus").textContent = health.status === "ok" ? "Online" : "Offline";
+        document.getElementById("modelStatus").textContent =
+          `${health.plant_num_classes}/${health.general_num_classes}/${health.tomato_num_classes}`;
+        document.getElementById("healthStatus").textContent = health.status === "ok" ? "Healthy" : "Issue";
+
+        document.getElementById("statusApi").textContent = health.status === "ok" ? "Online" : "Offline";
+        document.getElementById("statusModels").textContent =
+          `${health.plant_num_classes}/${health.general_num_classes}/${health.tomato_num_classes}`;
+
+        renderKPIs(stats, zones, forecast, alerts, recent);
+        renderBrief(stats, zones, forecast, alerts);
+        renderZones(zones);
+        renderForecast(forecast);
+        renderRecent(recent);
+        renderAlerts(alerts);
+        nowTime();
+
+      } catch(e){
+        document.getElementById("apiStatus").textContent = "Error";
+        document.getElementById("modelStatus").textContent = "Unavailable";
+        document.getElementById("healthStatus").textContent = "Issue";
+      }
+    }
+
+    document.getElementById("reloadBtn").addEventListener("click", loadAdmin);
+    document.getElementById("printBtn").addEventListener("click", () => window.print());
+
+    loadAdmin();
+    setInterval(loadAdmin, 15000);
+  </script>
+</body>
+</html>

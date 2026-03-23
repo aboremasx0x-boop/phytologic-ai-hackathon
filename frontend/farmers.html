@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phytologic AI - Farmers Hub</title>
+
+<style>
+:root{
+  --bg:#06111f;
+  --panel:#0f223d;
+  --line:rgba(255,255,255,.08);
+  --text:#eef4ff;
+  --muted:#9fb2cf;
+  --green:#22c55e;
+  --yellow:#f59e0b;
+  --red:#ef4444;
+  --blue:#38bdf8;
+}
+
+body{
+  margin:0;
+  font-family:Tahoma;
+  background:linear-gradient(180deg,#050d18,#09172d);
+  color:var(--text);
+}
+
+.app{
+  display:grid;
+  grid-template-columns:260px 1fr;
+  min-height:100vh;
+}
+
+.sidebar{
+  background:#0c1f38;
+  padding:18px;
+  border-left:1px solid var(--line);
+}
+
+.brand{
+  font-size:18px;
+  font-weight:bold;
+  margin-bottom:20px;
+}
+
+.nav a{
+  display:block;
+  padding:10px;
+  border-radius:10px;
+  text-decoration:none;
+  color:white;
+  margin-bottom:6px;
+}
+
+.nav a.active{
+  background:rgba(255,255,255,.08);
+}
+
+.main{
+  padding:18px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.card{
+  background:rgba(255,255,255,.04);
+  padding:14px;
+  border-radius:14px;
+  border:1px solid var(--line);
+}
+
+.value{
+  font-size:24px;
+  font-weight:bold;
+}
+
+.farmer-list{
+  display:grid;
+  gap:10px;
+}
+
+.farmer{
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+}
+
+.badge{
+  padding:4px 8px;
+  border-radius:10px;
+  font-size:12px;
+}
+
+.green{background:rgba(34,197,94,.2)}
+.yellow{background:rgba(245,158,11,.2)}
+.red{background:rgba(239,68,68,.2)}
+
+button{
+  background:var(--blue);
+  border:none;
+  padding:8px;
+  border-radius:8px;
+  color:white;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="brand">🌱 Farmers Hub</div>
+  <div class="nav">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/forecast">Forecast</a>
+    <a href="/forecast_ai">Forecast AI</a>
+    <a href="/alerts_page">Alerts</a>
+    <a href="/farmers" class="active">Farmers</a>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+<h2>👨‍🌾 Farmers Intelligence System</h2>
+
+<!-- KPIs -->
+<div class="grid">
+  <div class="card">
+    <div>عدد المزارعين</div>
+    <div id="totalFarmers" class="value">0</div>
+  </div>
+
+  <div class="card">
+    <div>نشطين الآن</div>
+    <div id="activeFarmers" class="value">0</div>
+  </div>
+
+  <div class="card">
+    <div>حالات اليوم</div>
+    <div id="todayCases" class="value">0</div>
+  </div>
+
+  <div class="card">
+    <div>مناطق مغطاة</div>
+    <div id="regionsCount" class="value">0</div>
+  </div>
+</div>
+
+<!-- Farmers -->
+<div class="card">
+  <h3>📡 Live Farmers Activity</h3>
+  <div id="farmersList" class="farmer-list">
+    جاري التحميل...
+  </div>
+</div>
+
+</div>
+</div>
+
+<script>
+let farmers = [];
+
+async function loadFarmers(){
+
+  // بيانات مؤقتة (تقدر تربطها API لاحقًا)
+  farmers = [
+    {name:"أحمد", region:"مكة", status:"active", cases:3},
+    {name:"سعيد", region:"الرياض", status:"medium", cases:5},
+    {name:"محمد", region:"المدينة", status:"critical", cases:8},
+    {name:"خالد", region:"الطائف", status:"active", cases:1},
+  ];
+
+  render();
+}
+
+function render(){
+
+  document.getElementById("totalFarmers").textContent = farmers.length;
+  document.getElementById("activeFarmers").textContent =
+    farmers.filter(f=>f.status==="active").length;
+
+  document.getElementById("todayCases").textContent =
+    farmers.reduce((a,b)=>a+b.cases,0);
+
+  document.getElementById("regionsCount").textContent =
+    [...new Set(farmers.map(f=>f.region))].length;
+
+  const list = document.getElementById("farmersList");
+
+  list.innerHTML = farmers.map(f=>`
+    <div class="farmer">
+      <strong>${f.name}</strong> — ${f.region}<br>
+      الحالات: ${f.cases}<br>
+      <span class="badge ${getClass(f.status)}">${f.status}</span><br><br>
+      <button onclick="openFarmer('${f.name}')">عرض التفاصيل</button>
+    </div>
+  `).join("");
+}
+
+function getClass(status){
+  if(status==="active") return "green";
+  if(status==="medium") return "yellow";
+  return "red";
+}
+
+function openFarmer(name){
+  alert("فتح ملف المزارع: " + name);
+}
+
+loadFarmers();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phytologic AI - Alerts Center</title>
+
+  <style>
+    :root{
+      --bg:#08162b;
+      --panel:#102445;
+      --panel2:#0f1f3b;
+      --line:rgba(255,255,255,.08);
+      --text:#eef4ff;
+      --muted:#9fb2cf;
+      --green:#22c55e;
+      --yellow:#f59e0b;
+      --red:#ef4444;
+      --pink:#ec4899;
+      --blue:#38bdf8;
+      --shadow:0 12px 28px rgba(0,0,0,.25);
+      --radius:18px;
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:Tahoma, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(56,189,248,.08), transparent 18%),
+        radial-gradient(circle at top left, rgba(236,72,153,.08), transparent 18%),
+        linear-gradient(180deg,#06111f 0%, #09172d 100%);
+      color:var(--text);
+    }
+
+    .app{
+      display:grid;
+      grid-template-columns:280px 1fr;
+      min-height:100vh;
+    }
+
+    .sidebar{
+      background:linear-gradient(180deg, rgba(15,37,70,.96), rgba(10,28,54,.96));
+      border-left:1px solid var(--line);
+      padding:18px 16px;
+      position:sticky;
+      top:0;
+      height:100vh;
+      overflow:auto;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 16px;
+      border-radius:20px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      margin-bottom:16px;
+      box-shadow:var(--shadow);
+    }
+
+    .brand h1{
+      margin:0;
+      font-size:18px;
+      line-height:1.2;
+    }
+
+    .brand small{
+      display:block;
+      color:var(--muted);
+      margin-top:4px;
+      font-size:11px;
+    }
+
+    .brand-logo{
+      width:46px;
+      height:46px;
+      border-radius:14px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg, rgba(239,68,68,.22), rgba(236,72,153,.18));
+      font-size:22px;
+    }
+
+    .nav{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-bottom:16px;
+    }
+
+    .nav a{
+      color:var(--text);
+      text-decoration:none;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid transparent;
+      transition:.18s ease;
+      font-size:14px;
+    }
+
+    .nav a:hover,
+    .nav a.active{
+      background:linear-gradient(90deg, rgba(239,68,68,.16), rgba(236,72,153,.10));
+      border-color:var(--line);
+    }
+
+    .side-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      margin-bottom:14px;
+      box-shadow:var(--shadow);
+    }
+
+    .side-card h3{
+      margin:0 0 10px;
+      font-size:14px;
+    }
+
+    .side-row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:7px 0;
+      border-bottom:1px dashed rgba(255,255,255,.06);
+      font-size:13px;
+    }
+
+    .side-row:last-child{border-bottom:none}
+    .side-row span:first-child{color:var(--muted)}
+
+    .main{
+      padding:18px;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns:1.05fr .95fr;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .hero-main{
+      background:linear-gradient(135deg, rgba(239,68,68,.18), rgba(236,72,153,.15));
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:22px;
+      box-shadow:var(--shadow);
+    }
+
+    .hero-main h2{
+      margin:0 0 10px;
+      font-size:24px;
+      line-height:1.3;
+    }
+
+    .hero-main p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.9;
+      font-size:14px;
+    }
+
+    .hero-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:16px;
+    }
+
+    .btn{
+      border:none;
+      border-radius:12px;
+      padding:10px 14px;
+      font-weight:bold;
+      cursor:pointer;
+      transition:.18s ease;
+    }
+
+    .btn-danger{
+      background:linear-gradient(135deg,#dc2626,#ef4444);
+      color:#fff;
+    }
+
+    .btn-light{
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+
+    .btn:hover{transform:translateY(-1px)}
+
+    .panel{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .panel-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      font-weight:bold;
+    }
+
+    .panel-body{
+      padding:16px;
+    }
+
+    .kpi-grid{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:14px;
+      margin-bottom:16px;
+    }
+
+    .kpi{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:var(--shadow);
+      position:relative;
+    }
+
+    .kpi::before{
+      content:"";
+      position:absolute;
+      inset:0 0 auto 0;
+      height:3px;
+      border-radius:18px 18px 0 0;
+      background:linear-gradient(90deg, rgba(239,68,68,.2), rgba(236,72,153,.95));
+    }
+
+    .kpi-label{
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:10px;
+    }
+
+    .kpi-value{
+      font-size:30px;
+      font-weight:800;
+      line-height:1;
+      margin-bottom:8px;
+    }
+
+    .kpi-sub{
+      font-size:12px;
+      color:#c8d6eb;
+    }
+
+    .filters{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr 1fr;
+      gap:12px;
+      margin-bottom:16px;
+    }
+
+    .field{
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .field label{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:8px;
+    }
+
+    .field select,
+    .field input{
+      width:100%;
+      border:none;
+      outline:none;
+      background:transparent;
+      color:var(--text);
+      font-family:inherit;
+      font-size:14px;
+    }
+
+    .layout{
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .alerts-list{
+      display:grid;
+      gap:12px;
+    }
+
+    .alert-card{
+      position:relative;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      padding:16px;
+      overflow:hidden;
+    }
+
+    .alert-card::before{
+      content:"";
+      position:absolute;
+      top:0;
+      bottom:0;
+      right:0;
+      width:5px;
+      background:var(--red);
+    }
+
+    .alert-card.medium::before{background:var(--yellow)}
+    .alert-card.high::before{background:var(--red)}
+    .alert-card.critical::before{background:var(--pink)}
+    .alert-card.low::before{background:var(--green)}
+
+    .alert-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:10px;
+      align-items:flex-start;
+    }
+
+    .alert-title{
+      font-size:16px;
+      font-weight:800;
+      margin-bottom:4px;
+    }
+
+    .alert-sub{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.7;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:bold;
+      white-space:nowrap;
+    }
+
+    .low{background:rgba(34,197,94,.14);color:#86efac}
+    .medium{background:rgba(245,158,11,.14);color:#fde68a}
+    .high{background:rgba(239,68,68,.14);color:#fca5a5}
+    .critical{background:rgba(236,72,153,.14);color:#f9a8d4}
+
+    .meta-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .meta-box{
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:12px;
+      padding:10px;
+      background:rgba(255,255,255,.03);
+    }
+
+    .meta-label{
+      font-size:11px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+
+    .meta-value{
+      font-size:14px;
+      font-weight:bold;
+    }
+
+    .insight{
+      padding:12px;
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      background:rgba(255,255,255,.03);
+      margin-bottom:10px;
+    }
+
+    .insight:last-child{margin-bottom:0}
+    .insight strong{
+      display:block;
+      margin-bottom:6px;
+    }
+
+    .insight span{
+      color:var(--muted);
+      line-height:1.8;
+      font-size:13px;
+    }
+
+    .forecast-item{
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      padding:12px;
+      background:rgba(255,255,255,.03);
+      margin-bottom:10px;
+    }
+
+    .forecast-item:last-child{margin-bottom:0}
+
+    .empty{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.8;
+    }
+
+    .footer{
+      color:var(--muted);
+      font-size:12px;
+      text-align:center;
+      margin-top:12px;
+    }
+
+    @media (max-width:1450px){
+      .kpi-grid{grid-template-columns:repeat(3,1fr)}
+      .filters{grid-template-columns:1fr 1fr}
+    }
+
+    @media (max-width:1100px){
+      .app{grid-template-columns:1fr}
+      .sidebar{
+        position:relative;
+        height:auto;
+        border-left:none;
+        border-bottom:1px solid var(--line);
+      }
+      .hero,.layout{grid-template-columns:1fr}
+    }
+
+    @media (max-width:700px){
+      .kpi-grid{grid-template-columns:1fr 1fr}
+      .filters{grid-template-columns:1fr}
+      .meta-grid{grid-template-columns:1fr 1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div>
+          <h1>Phytologic AI</h1>
+          <small>Global Alerts Center</small>
+        </div>
+        <div class="brand-logo">🚨</div>
+      </div>
+
+      <div class="nav">
+        <a href="/national_center">المركز الوطني</a>
+        <a href="/ui">التشخيص الذكي</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/alerts_page" class="active">Alerts</a>
+        <a href="/forecast_ai">Forecast AI</a>
+        <a href="/reports_center">Reports</a>
+      </div>
+
+      <div class="side-card">
+        <h3>حالة النظام</h3>
+        <div class="side-row"><span>API</span><span id="apiStatus">...</span></div>
+        <div class="side-row"><span>Models</span><span id="modelStatus">...</span></div>
+        <div class="side-row"><span>Forecast</span><span id="forecastStatus">Live</span></div>
+        <div class="side-row"><span>آخر تحديث</span><span id="lastUpdateLabel">--:--</span></div>
+      </div>
+
+      <div class="side-card">
+        <h3>Alert Intelligence</h3>
+        <div class="side-row"><span>الحرجة</span><span id="criticalMini">0</span></div>
+        <div class="side-row"><span>المرتفعة</span><span id="highMini">0</span></div>
+        <div class="side-row"><span>المتوسطة</span><span id="mediumMini">0</span></div>
+        <div class="side-row"><span>غير المؤكدة</span><span id="uncertainMini">0</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="hero">
+        <div class="hero-main">
+          <h2>Global Alerts & Response Center</h2>
+          <p>
+            واجهة تنبيهات عالمية مخصصة للرصد الفوري، تصنيف الخطورة، متابعة المناطق المتأثرة، وربط التنبيهات الحالية بالتوقعات خلال 24 و48 و72 ساعة.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-danger" id="reloadBtn">تحديث التنبيهات</button>
+            <button class="btn btn-light" id="showCriticalBtn">عرض الحرجة فقط</button>
+            <button class="btn btn-light" id="resetFiltersBtn">إعادة الضبط</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">Response Brief</div>
+          <div class="panel-body" id="briefBox">
+            <div class="insight">
+              <strong>جاري التحليل</strong>
+              <span>سيتم توليد ملخص تنفيذي للتنبيهات فور تحميل البيانات.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">إجمالي التنبيهات</div>
+          <div class="kpi-value" id="kpiAlerts">0</div>
+          <div class="kpi-sub">كل الحالات المصنفة تنبيهًا</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">حرجة</div>
+          <div class="kpi-value" id="kpiCritical">0</div>
+          <div class="kpi-sub">تحتاج تدخلًا عاجلًا</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">مرتفعة</div>
+          <div class="kpi-value" id="kpiHigh">0</div>
+          <div class="kpi-sub">رصد فوري ومتابعة لصيقة</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">غير مؤكدة</div>
+          <div class="kpi-value" id="kpiUncertain">0</div>
+          <div class="kpi-sub">تحتاج تأكيدًا أو إعادة تصوير</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">أعلى منطقة تنبيه</div>
+          <div class="kpi-value" id="kpiTopRegion">-</div>
+          <div class="kpi-sub">بناءً على عدد/خطر الحالات</div>
+        </div>
+      </section>
+
+      <section class="filters">
+        <div class="field">
+          <label>فلترة حسب المستوى</label>
+          <select id="severityFilter">
+            <option value="all">الكل</option>
+            <option value="critical">حرج</option>
+            <option value="high">مرتفع</option>
+            <option value="medium">متوسط</option>
+            <option value="low">منخفض</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>فلترة حسب القرار</label>
+          <select id="decisionFilter">
+            <option value="all">الكل</option>
+            <option value="مؤكد">مؤكد</option>
+            <option value="غير مؤكد">غير مؤكد</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>فلترة حسب المنطقة</label>
+          <select id="regionFilter">
+            <option value="all">الكل</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>بحث سريع</label>
+          <input id="searchInput" type="text" placeholder="مرض / نبات / منطقة" />
+        </div>
+      </section>
+
+      <section class="layout">
+        <div class="panel">
+          <div class="panel-head">
+            <span>Live Alerts Feed</span>
+            <span id="alertsCountLabel">0 items</span>
+          </div>
+          <div class="panel-body">
+            <div class="alerts-list" id="alertsList">
+              <div class="empty">جاري تحميل التنبيهات...</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;gap:16px;">
+          <div class="panel">
+            <div class="panel-head">Forecast Watchlist</div>
+            <div class="panel-body" id="forecastBox">
+              <div class="empty">جاري تحميل التوقع...</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">Regional Alert Pressure</div>
+            <div class="panel-body" id="zonesBox">
+              <div class="empty">جاري تحميل المناطق...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="footer">
+        Phytologic AI — Alerts Center
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let rawAlerts = [];
+    let rawZones = [];
+    let rawForecast = [];
+    let rawStats = null;
+
+    function nowTime(){
+      document.getElementById("lastUpdateLabel").textContent = new Date().toLocaleTimeString("ar-SA");
+    }
+
+    function animateNumber(id, target){
+      const el = document.getElementById(id);
+      const end = Number(target) || 0;
+      const start = Number(el.dataset.current || 0);
+      const duration = 350;
+      const steps = 20;
+      const stepValue = (end - start) / steps;
+      let current = start;
+      let step = 0;
+
+      const timer = setInterval(() => {
+        step++;
+        current += stepValue;
+        if(step >= steps){
+          el.textContent = end;
+          el.dataset.current = end;
+          clearInterval(timer);
+        } else {
+          el.textContent = Math.round(current);
+        }
+      }, duration / steps);
+    }
+
+    function riskClassFromScore(score){
+      const s = Number(score) || 0;
+      if(s >= 85) return "critical";
+      if(s >= 70) return "high";
+      if(s >= 45) return "medium";
+      return "low";
+    }
+
+    function riskLabel(c){
+      if(c === "critical") return "حرج";
+      if(c === "high") return "مرتفع";
+      if(c === "medium") return "متوسط";
+      return "منخفض";
+    }
+
+    function getAlertClass(item){
+      const risk = Number(item.risk_score || 0);
+
+      if(item.spread_risk === "مرتفع" && item.decision === "غير مؤكد"){
+        return risk >= 80 ? "critical" : "high";
+      }
+
+      if(risk >= 85) return "critical";
+      if(risk >= 70) return "high";
+      if(risk >= 45) return "medium";
+      return "low";
+    }
+
+    function buildRegionOptions(items){
+      const select = document.getElementById("regionFilter");
+      const regions = [...new Set(items.map(x => x.region || "غير محددة"))].sort();
+      select.innerHTML = `<option value="all">الكل</option>` +
+        regions.map(r => `<option value="${r}">${r}</option>`).join("");
+    }
+
+    function applyFilters(items){
+      const severity = document.getElementById("severityFilter").value;
+      const decision = document.getElementById("decisionFilter").value;
+      const region = document.getElementById("regionFilter").value;
+      const search = document.getElementById("searchInput").value.trim().toLowerCase();
+
+      return items.filter(item => {
+        const cls = getAlertClass(item);
+        const matchSeverity = severity === "all" ? true : cls === severity;
+        const matchDecision = decision === "all" ? true : (item.decision || "") === decision;
+        const matchRegion = region === "all" ? true : (item.region || "غير محددة") === region;
+
+        const haystack = [
+          item.plant_ar || "",
+          item.disease_ar || "",
+          item.region || "",
+          item.decision || ""
+        ].join(" ").toLowerCase();
+
+        const matchSearch = !search ? true : haystack.includes(search);
+
+        return matchSeverity && matchDecision && matchRegion && matchSearch;
+      });
+    }
+
+    function renderKPIs(items){
+      const critical = items.filter(x => getAlertClass(x) === "critical").length;
+      const high = items.filter(x => getAlertClass(x) === "high").length;
+      const medium = items.filter(x => getAlertClass(x) === "medium").length;
+      const uncertain = items.filter(x => (x.decision || "") === "غير مؤكد").length;
+
+      const regionCount = {};
+      items.forEach(x => {
+        const r = x.region || "غير محددة";
+        regionCount[r] = (regionCount[r] || 0) + 1;
+      });
+
+      const topRegion = Object.entries(regionCount).sort((a,b)=>b[1]-a[1])[0]?.[0] || "-";
+
+      animateNumber("kpiAlerts", items.length);
+      animateNumber("kpiCritical", critical);
+      animateNumber("kpiHigh", high);
+      animateNumber("kpiUncertain", uncertain);
+
+      document.getElementById("kpiTopRegion").textContent = topRegion;
+
+      document.getElementById("criticalMini").textContent = critical;
+      document.getElementById("highMini").textContent = high;
+      document.getElementById("mediumMini").textContent = medium;
+      document.getElementById("uncertainMini").textContent = uncertain;
+    }
+
+    function renderBrief(items){
+      const box = document.getElementById("briefBox");
+
+      if(!items.length){
+        box.innerHTML = `
+          <div class="insight">
+            <strong>لا توجد تنبيهات مطابقة للفلاتر الحالية</strong>
+            <span>يمكنك تعديل الفلاتر أو تحديث البيانات لإظهار نتائج جديدة.</span>
+          </div>
+        `;
+        return;
+      }
+
+      const critical = items.filter(x => getAlertClass(x) === "critical");
+      const high = items.filter(x => getAlertClass(x) === "high");
+      const uncertain = items.filter(x => (x.decision || "") === "غير مؤكد");
+      const top = items.sort((a,b)=>(Number(b.risk_score||0)-Number(a.risk_score||0)))[0];
+      const forecastTop = rawForecast[0];
+
+      box.innerHTML = `
+        <div class="insight">
+          <strong>الحالة الحالية</strong>
+          <span>يوجد ${items.length} تنبيهًا نشطًا، منها ${critical.length} حرجة و${high.length} مرتفعة.</span>
+        </div>
+        <div class="insight">
+          <strong>أولوية الاستجابة</strong>
+          <span>أعلى حالة تنبيه حاليًا مرتبطة بـ ${top?.disease_ar || "-"} في ${top?.region || "غير محددة"}.</span>
+        </div>
+        <div class="insight">
+          <strong>التوقع المرتبط</strong>
+          <span>أعلى منطقة متوقعة خلال 72 ساعة هي ${forecastTop?.region || "-"} بمستوى ${forecastTop?.risk_72h || 0}.</span>
+        </div>
+        <div class="insight">
+          <strong>التوصية التشغيلية</strong>
+          <span>ركز أولًا على الحالات غير المؤكدة عالية الخطر، ثم راقب المناطق ذات الاتجاه التصاعدي.</span>
+        </div>
+      `;
+    }
+
+    function renderAlerts(items){
+      const list = document.getElementById("alertsList");
+      document.getElementById("alertsCountLabel").textContent = `${items.length} items`;
+
+      if(!items.length){
+        list.innerHTML = `<div class="empty">لا توجد تنبيهات مطابقة للفلاتر الحالية.</div>`;
+        return;
+      }
+
+      list.innerHTML = items.map(item => {
+        const cls = getAlertClass(item);
+        return `
+          <div class="alert-card ${cls}">
+            <div class="alert-top">
+              <div>
+                <div class="alert-title">${item.plant_ar || item.plant || "-"} — ${item.disease_ar || item.disease || "-"}</div>
+                <div class="alert-sub">
+                  القرار: ${item.decision || "-"} |
+                  المنطقة: ${item.region || "غير محددة"} |
+                  الوقت: ${item.timestamp || "-"}
+                </div>
+              </div>
+              <span class="badge ${cls}">${riskLabel(cls)}</span>
+            </div>
+
+            <div class="meta-grid">
+              <div class="meta-box">
+                <div class="meta-label">الثقة</div>
+                <div class="meta-value">${item.confidence ?? "-"}%</div>
+              </div>
+              <div class="meta-box">
+                <div class="meta-label">مؤشر الخطر</div>
+                <div class="meta-value">${item.risk_score ?? 0}</div>
+              </div>
+              <div class="meta-box">
+                <div class="meta-label">خطر الانتشار</div>
+                <div class="meta-value">${item.spread_risk || "-"}</div>
+              </div>
+              <div class="meta-box">
+                <div class="meta-label">مطابقة المحصول</div>
+                <div class="meta-value">${item.crop_disease_match === false ? "غير مطابق" : "مطابق"}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderForecast(items){
+      const box = document.getElementById("forecastBox");
+      if(!items.length){
+        box.innerHTML = `<div class="empty">لا توجد بيانات Forecast حالية.</div>`;
+        return;
+      }
+
+      box.innerHTML = items.slice(0,6).map(f => `
+        <div class="forecast-item">
+          <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:8px">
+            <strong>${f.region}</strong>
+            <span class="badge ${riskClassFromScore(f.risk_72h)}">${f.trend}</span>
+          </div>
+          <div style="color:var(--muted);font-size:13px;line-height:1.8">
+            المرض الأبرز: ${f.top_disease}<br>
+            24h: ${f.risk_24h}<br>
+            48h: ${f.risk_48h}<br>
+            72h: ${f.risk_72h}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderZones(items){
+      const box = document.getElementById("zonesBox");
+      if(!items.length){
+        box.innerHTML = `<div class="empty">لا توجد بيانات مناطق.</div>`;
+        return;
+      }
+
+      box.innerHTML = items.slice(0,6).map(z => `
+        <div class="forecast-item">
+          <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:8px">
+            <strong>${z.region}</strong>
+            <span class="badge ${riskClassFromScore(z.avg_risk)}">${z.avg_risk}</span>
+          </div>
+          <div style="color:var(--muted);font-size:13px;line-height:1.8">
+            عدد الحالات: ${z.count}<br>
+            المؤكدة: ${z.confirmed}<br>
+            متوسط الشدة: ${z.avg_severity_percent}%<br>
+            أكثر مرض: ${z.top_disease}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function getJSON(url){
+      const res = await fetch(url);
+      return await res.json();
+    }
+
+    async function loadAll(){
+      try{
+        const [health, alertsRes, stats, forecastRes, zonesRes] = await Promise.all([
+          getJSON("/health"),
+          getJSON("/alerts"),
+          getJSON("/stats"),
+          getJSON("/forecast_ai"),
+          getJSON("/zones_summary"),
+        ]);
+
+        document.getElementById("apiStatus").textContent = health.status === "ok" ? "Online" : "Offline";
+        document.getElementById("modelStatus").textContent =
+          `${health.plant_num_classes}/${health.general_num_classes}/${health.tomato_num_classes}`;
+
+        rawAlerts = alertsRes.items || [];
+        rawStats = stats;
+        rawForecast = forecastRes.items || [];
+        rawZones = zonesRes.items || [];
+
+        buildRegionOptions(rawAlerts);
+
+        const filtered = applyFilters(rawAlerts);
+        renderKPIs(filtered);
+        renderBrief(filtered);
+        renderAlerts(filtered);
+        renderForecast(rawForecast);
+        renderZones(rawZones);
+        nowTime();
+
+      } catch(e){
+        document.getElementById("apiStatus").textContent = "Error";
+      }
+    }
+
+    function applyAllFilters(){
+      const filtered = applyFilters(rawAlerts);
+      renderKPIs(filtered);
+      renderBrief(filtered);
+      renderAlerts(filtered);
+    }
+
+    document.getElementById("reloadBtn").addEventListener("click", loadAll);
+
+    document.getElementById("showCriticalBtn").addEventListener("click", () => {
+      document.getElementById("severityFilter").value = "critical";
+      applyAllFilters();
+    });
+
+    document.getElementById("resetFiltersBtn").addEventListener("click", () => {
+      document.getElementById("severityFilter").value = "all";
+      document.getElementById("decisionFilter").value = "all";
+      document.getElementById("regionFilter").value = "all";
+      document.getElementById("searchInput").value = "";
+      applyAllFilters();
+    });
+
+    document.getElementById("severityFilter").addEventListener("change", applyAllFilters);
+    document.getElementById("decisionFilter").addEventListener("change", applyAllFilters);
+    document.getElementById("regionFilter").addEventListener("change", applyAllFilters);
+    document.getElementById("searchInput").addEventListener("input", applyAllFilters);
+
+    loadAll();
+    setInterval(loadAll, 15000);
+  </script>
+</body>
+</html>

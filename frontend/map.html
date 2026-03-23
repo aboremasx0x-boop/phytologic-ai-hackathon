@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phytologic AI - GIS Map Center</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+  <style>
+    :root{
+      --bg:#06111d;
+      --panel:#0f223d;
+      --panel2:#132949;
+      --line:rgba(255,255,255,.08);
+      --text:#eef4ff;
+      --muted:#9fb2cf;
+      --green:#22c55e;
+      --yellow:#f59e0b;
+      --red:#ef4444;
+      --pink:#ec4899;
+      --blue:#38bdf8;
+      --shadow:0 12px 28px rgba(0,0,0,.25);
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:Tahoma, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(56,189,248,.08), transparent 18%),
+        radial-gradient(circle at top right, rgba(236,72,153,.07), transparent 18%),
+        linear-gradient(180deg,#040c17 0%, #081729 100%);
+      color:var(--text);
+    }
+
+    .app{
+      display:grid;
+      grid-template-columns:300px 1fr;
+      min-height:100vh;
+    }
+
+    .sidebar{
+      background:linear-gradient(180deg, rgba(15,34,61,.98), rgba(10,24,45,.98));
+      border-left:1px solid var(--line);
+      padding:18px 16px;
+      position:sticky;
+      top:0;
+      height:100vh;
+      overflow:auto;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 16px;
+      border-radius:20px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      margin-bottom:16px;
+      box-shadow:var(--shadow);
+    }
+
+    .brand h1{
+      margin:0;
+      font-size:18px;
+      line-height:1.2;
+    }
+
+    .brand small{
+      display:block;
+      color:var(--muted);
+      margin-top:4px;
+      font-size:11px;
+    }
+
+    .brand-logo{
+      width:46px;
+      height:46px;
+      border-radius:14px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg, rgba(56,189,248,.25), rgba(34,197,94,.18));
+      font-size:22px;
+    }
+
+    .nav{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-bottom:16px;
+    }
+
+    .nav a{
+      color:var(--text);
+      text-decoration:none;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid transparent;
+      transition:.18s ease;
+      font-size:14px;
+    }
+
+    .nav a:hover,
+    .nav a.active{
+      background:linear-gradient(90deg, rgba(56,189,248,.16), rgba(34,197,94,.10));
+      border-color:var(--line);
+    }
+
+    .side-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      margin-bottom:14px;
+      box-shadow:var(--shadow);
+    }
+
+    .side-card h3{
+      margin:0 0 10px;
+      font-size:14px;
+    }
+
+    .side-row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:7px 0;
+      border-bottom:1px dashed rgba(255,255,255,.06);
+      font-size:13px;
+    }
+
+    .side-row:last-child{border-bottom:none}
+    .side-row span:first-child{color:var(--muted)}
+
+    .field{
+      margin-bottom:12px;
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px;
+    }
+
+    .field label{
+      display:block;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:8px;
+    }
+
+    .field select,
+    .field input{
+      width:100%;
+      background:transparent;
+      border:none;
+      outline:none;
+      color:var(--text);
+      font-family:inherit;
+      font-size:14px;
+    }
+
+    .btn{
+      width:100%;
+      border:none;
+      border-radius:12px;
+      padding:11px 14px;
+      cursor:pointer;
+      font-weight:700;
+      font-family:inherit;
+      margin-bottom:10px;
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg,#2563eb,#0ea5e9);
+      color:#fff;
+    }
+
+    .btn-light{
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+
+    .main{
+      padding:18px;
+      display:grid;
+      grid-template-rows:auto 1fr auto;
+      gap:16px;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns:1.05fr .95fr;
+      gap:16px;
+    }
+
+    .hero-main{
+      background:linear-gradient(135deg, rgba(56,189,248,.18), rgba(37,99,235,.14));
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:22px;
+      box-shadow:var(--shadow);
+    }
+
+    .hero-main h2{
+      margin:0 0 10px;
+      font-size:24px;
+      line-height:1.3;
+    }
+
+    .hero-main p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.9;
+      font-size:14px;
+    }
+
+    .hero-side{
+      display:grid;
+      gap:16px;
+    }
+
+    .panel{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .panel-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      font-weight:bold;
+    }
+
+    .panel-body{
+      padding:16px;
+    }
+
+    .stats-grid{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:14px;
+    }
+
+    .stat{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:var(--shadow);
+    }
+
+    .stat-label{
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:10px;
+    }
+
+    .stat-value{
+      font-size:28px;
+      font-weight:800;
+      line-height:1;
+      margin-bottom:8px;
+    }
+
+    .stat-sub{
+      font-size:12px;
+      color:#c8d6eb;
+    }
+
+    .map-panel{
+      display:grid;
+      grid-template-columns:1fr 340px;
+      gap:16px;
+      min-height:0;
+    }
+
+    .map-wrap{
+      position:relative;
+      border:1px solid var(--line);
+      border-radius:22px;
+      overflow:hidden;
+      box-shadow:var(--shadow);
+      background:#0c182d;
+      min-height:640px;
+    }
+
+    #map{
+      width:100%;
+      height:100%;
+      min-height:640px;
+    }
+
+    .map-floating{
+      position:absolute;
+      top:14px;
+      left:14px;
+      z-index:500;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      max-width:420px;
+    }
+
+    .tiny-btn{
+      border:none;
+      border-radius:10px;
+      padding:8px 10px;
+      font-size:12px;
+      cursor:pointer;
+      background:rgba(15,23,42,.88);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.08);
+      backdrop-filter: blur(8px);
+    }
+
+    .legend{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      font-size:12px;
+      color:#dbeafe;
+    }
+
+    .legend span{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .dot{
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      display:inline-block;
+    }
+
+    .side-map-panels{
+      display:grid;
+      grid-template-rows:auto auto 1fr;
+      gap:16px;
+      min-height:0;
+    }
+
+    .list{
+      max-height:420px;
+      overflow:auto;
+    }
+
+    .item{
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      background:rgba(255,255,255,.03);
+      padding:12px;
+      margin-bottom:10px;
+    }
+
+    .item:last-child{margin-bottom:0}
+
+    .item-top{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:8px;
+    }
+
+    .item-title{
+      font-weight:bold;
+      font-size:14px;
+    }
+
+    .item-meta{
+      color:var(--muted);
+      line-height:1.8;
+      font-size:13px;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:bold;
+      white-space:nowrap;
+    }
+
+    .low{background:rgba(34,197,94,.14);color:#86efac}
+    .medium{background:rgba(245,158,11,.14);color:#fde68a}
+    .high{background:rgba(239,68,68,.14);color:#fca5a5}
+    .critical{background:rgba(236,72,153,.14);color:#f9a8d4}
+    .info{background:rgba(56,189,248,.14);color:#93c5fd}
+
+    .footer{
+      color:var(--muted);
+      font-size:12px;
+      text-align:center;
+      margin-top:4px;
+    }
+
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip{
+      background:#102445;
+      color:#eef4ff;
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    @media (max-width:1450px){
+      .stats-grid{grid-template-columns:repeat(3,1fr)}
+    }
+
+    @media (max-width:1200px){
+      .map-panel{grid-template-columns:1fr}
+      .side-map-panels{grid-template-columns:1fr;grid-template-rows:auto}
+      .map-wrap,#map{min-height:520px}
+    }
+
+    @media (max-width:1100px){
+      .app{grid-template-columns:1fr}
+      .sidebar{
+        position:relative;
+        height:auto;
+        border-left:none;
+        border-bottom:1px solid var(--line);
+      }
+      .hero{grid-template-columns:1fr}
+    }
+
+    @media (max-width:700px){
+      .stats-grid{grid-template-columns:1fr 1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div>
+          <h1>Phytologic AI</h1>
+          <small>GIS & Spatial Intelligence</small>
+        </div>
+        <div class="brand-logo">🗺️</div>
+      </div>
+
+      <div class="nav">
+        <a href="/national_center">المركز الوطني</a>
+        <a href="/ui">التشخيص الذكي</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/alerts_page">Alerts</a>
+        <a href="/forecast">Forecast</a>
+        <a href="/map" class="active">Map</a>
+        <a href="/reports_center">Reports</a>
+      </div>
+
+      <div class="side-card">
+        <h3>Map Controls</h3>
+
+        <div class="field">
+          <label>فلترة حسب المنطقة</label>
+          <select id="regionFilter">
+            <option value="all">الكل</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>فلترة حسب الخطر</label>
+          <select id="riskFilter">
+            <option value="all">الكل</option>
+            <option value="critical">حرج</option>
+            <option value="high">مرتفع</option>
+            <option value="medium">متوسط</option>
+            <option value="low">منخفض</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>بحث سريع</label>
+          <input id="searchInput" type="text" placeholder="منطقة / مرض / نبات" />
+        </div>
+
+        <button class="btn btn-primary" id="reloadBtn">تحديث الخريطة</button>
+        <button class="btn btn-light" id="criticalBtn">عرض الحرج فقط</button>
+        <button class="btn btn-light" id="resetBtn">إعادة الضبط</button>
+      </div>
+
+      <div class="side-card">
+        <h3>Layer Status</h3>
+        <div class="side-row"><span>API</span><span id="apiStatus">...</span></div>
+        <div class="side-row"><span>Regions Layer</span><span id="regionsStatus">On</span></div>
+        <div class="side-row"><span>Heatmap Layer</span><span id="heatStatus">On</span></div>
+        <div class="side-row"><span>Weather Layer</span><span id="weatherStatus">On</span></div>
+        <div class="side-row"><span>آخر تحديث</span><span id="lastUpdateLabel">--:--</span></div>
+      </div>
+
+      <div class="side-card">
+        <h3>Spatial Snapshot</h3>
+        <div class="side-row"><span>النقاط</span><span id="pointsMini">0</span></div>
+        <div class="side-row"><span>المناطق</span><span id="zonesMini">0</span></div>
+        <div class="side-row"><span>Weather Points</span><span id="weatherMini">0</span></div>
+        <div class="side-row"><span>Heat Intensity</span><span id="heatMini">0</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="hero">
+        <div class="hero-main">
+          <h2>GIS Map Center — Heatmap, GeoJSON & Spatial Risk View</h2>
+          <p>
+            واجهة خرائط مستقلة مخصصة للتحليل المكاني فقط: Heatmap للكثافة، GeoJSON للمناطق، نقاط الحالات، طبقة الطقس، وقراءة سريعة لمشهد الخطر المكاني الحالي.
+          </p>
+        </div>
+
+        <div class="hero-side">
+          <div class="panel">
+            <div class="panel-head">Spatial Summary</div>
+            <div class="panel-body" id="spatialBrief">
+              جاري بناء الملخص المكاني...
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <div class="stat">
+          <div class="stat-label">إجمالي النقاط</div>
+          <div class="stat-value" id="statPoints">0</div>
+          <div class="stat-sub">الحالات المرتبطة بإحداثيات</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">المناطق الملونة</div>
+          <div class="stat-value" id="statZones">0</div>
+          <div class="stat-sub">GeoJSON المرتبط بالضغط الحالي</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">أعلى منطقة</div>
+          <div class="stat-value" id="statTopZone">-</div>
+          <div class="stat-sub">الأعلى في avg_risk</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">أعلى مرض مكانيًا</div>
+          <div class="stat-value" id="statTopDisease">-</div>
+          <div class="stat-sub">الأكثر ظهورًا على الخريطة</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-label">مؤشر الحرارة</div>
+          <div class="stat-value" id="statHeat">0</div>
+          <div class="stat-sub">متوسط شدة النقاط المعروضة</div>
+        </div>
+      </section>
+
+      <section class="map-panel">
+        <div class="map-wrap">
+          <div class="map-floating">
+            <button class="tiny-btn" id="toggleMarkersBtn">Markers</button>
+            <button class="tiny-btn" id="toggleHeatBtn">Heatmap</button>
+            <button class="tiny-btn" id="toggleWeatherBtn">Weather</button>
+            <button class="tiny-btn" id="toggleRegionsBtn">Regions</button>
+            <button class="tiny-btn" id="fitBtn">Fit Bounds</button>
+          </div>
+          <div id="map"></div>
+        </div>
+
+        <div class="side-map-panels">
+          <div class="panel">
+            <div class="panel-head">
+              <span>Legend</span>
+            </div>
+            <div class="panel-body">
+              <div class="legend">
+                <span><i class="dot" style="background:#22c55e"></i> منخفض</span>
+                <span><i class="dot" style="background:#f59e0b"></i> متوسط</span>
+                <span><i class="dot" style="background:#ef4444"></i> مرتفع</span>
+                <span><i class="dot" style="background:#ec4899"></i> حرج</span>
+                <span><i class="dot" style="background:#38bdf8"></i> طقس</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <span>Zone Pressure</span>
+            </div>
+            <div class="panel-body list" id="zonesList">
+              <div class="item">جاري تحميل المناطق...</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <span>Spatial Cases</span>
+            </div>
+            <div class="panel-body list" id="casesList">
+              <div class="item">جاري تحميل الحالات...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="footer">
+        Phytologic AI — GIS Map Center
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let map;
+    let caseLayer;
+    let weatherLayer;
+    let heatLayer = null;
+    let regionsLayer = null;
+
+    let rawCases = [];
+    let rawZones = [];
+    let rawWeather = [];
+    let rawRegionsGeo = null;
+
+    let markersVisible = true;
+    let heatVisible = true;
+    let weatherVisible = true;
+    let regionsVisible = true;
+
+    function nowTime(){
+      document.getElementById("lastUpdateLabel").textContent = new Date().toLocaleTimeString("ar-SA");
+    }
+
+    function riskClass(score){
+      const s = Number(score) || 0;
+      if(s >= 85) return "critical";
+      if(s >= 70) return "high";
+      if(s >= 45) return "medium";
+      return "low";
+    }
+
+    function riskColor(score){
+      const cls = riskClass(score);
+      if(cls === "critical") return "#ec4899";
+      if(cls === "high") return "#ef4444";
+      if(cls === "medium") return "#f59e0b";
+      return "#22c55e";
+    }
+
+    function riskLabel(score){
+      const cls = riskClass(score);
+      if(cls === "critical") return "حرج";
+      if(cls === "high") return "مرتفع";
+      if(cls === "medium") return "متوسط";
+      return "منخفض";
+    }
+
+    function initMap(){
+      map = L.map("map").setView([23.8859, 45.0792], 5);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap"
+      }).addTo(map);
+
+      caseLayer = L.layerGroup().addTo(map);
+      weatherLayer = L.layerGroup().addTo(map);
+    }
+
+    async function getJSON(url){
+      const res = await fetch(url);
+      return await res.json();
+    }
+
+    function buildRegionOptions(items){
+      const select = document.getElementById("regionFilter");
+      const regions = [...new Set(items.map(x => x.region || "غير محددة"))].sort();
+      select.innerHTML = `<option value="all">الكل</option>` +
+        regions.map(r => `<option value="${r}">${r}</option>`).join("");
+    }
+
+    function applyFilters(items){
+      const region = document.getElementById("regionFilter").value;
+      const risk = document.getElementById("riskFilter").value;
+      const search = document.getElementById("searchInput").value.trim().toLowerCase();
+
+      return items.filter(item => {
+        const matchRegion = region === "all" ? true : (item.region || "غير محددة") === region;
+        const matchRisk = risk === "all" ? true : riskClass(item.risk_score) === risk;
+
+        const haystack = [
+          item.region || "",
+          item.disease_ar || "",
+          item.plant_ar || "",
+          item.disease || "",
+          item.plant || ""
+        ].join(" ").toLowerCase();
+
+        const matchSearch = !search ? true : haystack.includes(search);
+        return matchRegion && matchRisk && matchSearch;
+      });
+    }
+
+    function popupHtml(item){
+      const weather = item.weather && item.weather.current ? item.weather.current : {};
+      return `
+        <div style="line-height:1.9;font-size:13px;min-width:220px">
+          <strong>${item.plant_ar || "-"}</strong><br>
+          المرض: ${item.disease_ar || "-"}<br>
+          القرار: ${item.decision || "-"}<br>
+          الثقة: ${item.confidence ?? "-"}%<br>
+          الشدة: ${item.severity || "-"} (${item.severity_percent ?? "-"}%)<br>
+          الخطر: ${item.risk_score ?? 0}<br>
+          المنطقة: ${item.region || "-"}<br>
+          الحرارة: ${weather.temperature_2m ?? "-"}<br>
+          الرطوبة: ${weather.relative_humidity_2m ?? "-"}<br>
+          الوقت: ${item.timestamp || "-"}
+        </div>
+      `;
+    }
+
+    function renderMarkers(items){
+      caseLayer.clearLayers();
+      if(!markersVisible) return;
+
+      items.forEach(item => {
+        if(item.latitude == null || item.longitude == null) return;
+
+        L.circleMarker([item.latitude, item.longitude], {
+          radius: Number(item.risk_score || 0) >= 85 ? 11 : Number(item.risk_score || 0) >= 70 ? 9 : Number(item.risk_score || 0) >= 45 ? 7 : 5,
+          color: riskColor(item.risk_score),
+          fillColor: riskColor(item.risk_score),
+          fillOpacity: 0.55,
+          weight: 2
+        })
+        .bindPopup(popupHtml(item))
+        .addTo(caseLayer);
+      });
+    }
+
+    function renderHeatmap(items){
+      if(heatLayer){
+        map.removeLayer(heatLayer);
+        heatLayer = null;
+      }
+
+      if(!heatVisible) return;
+
+      const points = items
+        .filter(x => x.latitude != null && x.longitude != null)
+        .map(x => {
+          const s = Number(x.risk_score || 0);
+          let intensity = 0.35;
+          if(s >= 85) intensity = 1.15;
+          else if(s >= 70) intensity = 1.0;
+          else if(s >= 45) intensity = 0.65;
+          return [x.latitude, x.longitude, intensity];
+        });
+
+      if(points.length){
+        heatLayer = L.heatLayer(points, {
+          radius: 28,
+          blur: 24,
+          maxZoom: 10
+        }).addTo(map);
+      }
+    }
+
+    function renderWeather(items){
+      weatherLayer.clearLayers();
+      if(!weatherVisible) return;
+
+      items.forEach(item => {
+        if(item.latitude == null || item.longitude == null) return;
+
+        L.circleMarker([item.latitude, item.longitude], {
+          radius: 5,
+          color: "#38bdf8",
+          fillColor: "#38bdf8",
+          fillOpacity: 0.85,
+          weight: 1
+        })
+        .bindPopup(`
+          <div style="line-height:1.9;font-size:13px">
+            <strong>طقس الموقع</strong><br>
+            الحرارة: ${item.temperature ?? "-"}<br>
+            الرطوبة: ${item.humidity ?? "-"}<br>
+            المطر: ${item.precipitation ?? "-"}<br>
+            الرياح: ${item.wind_speed ?? "-"}<br>
+            النبات: ${item.plant_ar ?? "-"}<br>
+            المرض: ${item.disease_ar ?? "-"}
+          </div>
+        `)
+        .addTo(weatherLayer);
+      });
+    }
+
+    function buildZoneLookup(zones){
+      const lookup = {};
+      zones.forEach(z => { lookup[z.region] = z; });
+      return lookup;
+    }
+
+    function renderRegions(geo, zones){
+      if(regionsLayer){
+        map.removeLayer(regionsLayer);
+        regionsLayer = null;
+      }
+
+      if(!regionsVisible || !geo || !geo.features) return;
+
+      const lookup = buildZoneLookup(zones);
+
+      regionsLayer = L.geoJSON(geo, {
+        style: function(feature){
+          const region = feature.properties?.name || "غير محددة";
+          const z = lookup[region];
+          const score = z ? z.avg_risk : 0;
+
+          return {
+            color:"#cbd5e1",
+            weight:1.2,
+            fillColor:riskColor(score),
+            fillOpacity:z ? 0.30 : 0.10
+          };
+        },
+        onEachFeature: function(feature, layer){
+          const region = feature.properties?.name || "غير محددة";
+          const z = lookup[region];
+
+          layer.bindPopup(`
+            <div style="line-height:1.9;font-size:13px;min-width:220px">
+              <strong>${region}</strong><br>
+              عدد الحالات: ${z ? z.count : 0}<br>
+              المؤكدة: ${z ? z.confirmed : 0}<br>
+              متوسط الخطر: ${z ? z.avg_risk : 0}<br>
+              متوسط الشدة: ${z ? z.avg_severity_percent : 0}%<br>
+              أكثر مرض: ${z ? z.top_disease : "-"}
+            </div>
+          `);
+        }
+      }).addTo(map);
+    }
+
+    function renderSpatialBrief(items, zones){
+      const box = document.getElementById("spatialBrief");
+
+      if(!items.length){
+        box.innerHTML = `لا توجد بيانات مكانية كافية بعد. أدخل Latitude و Longitude أثناء التشخيص لتفعيل التحليل المكاني.`;
+        return;
+      }
+
+      const topZone = zones[0]?.region || "-";
+      const topZoneRisk = zones[0]?.avg_risk || 0;
+
+      const diseaseCounts = {};
+      items.forEach(x => {
+        const key = x.disease_ar || x.disease || "غير معروف";
+        diseaseCounts[key] = (diseaseCounts[key] || 0) + 1;
+      });
+      const topDisease = Object.entries(diseaseCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || "-";
+
+      box.innerHTML = `
+        أعلى منطقة مكانية حاليًا هي <strong>${topZone}</strong> بمتوسط خطر <strong>${topZoneRisk}</strong>.
+        المرض الأكثر ظهورًا على الخريطة هو <strong>${topDisease}</strong>.
+        استخدم طبقات Regions وHeatmap وWeather معًا لقراءة الصورة المكانية الكاملة.
+      `;
+    }
+
+    function renderStats(items, zones, weatherItems){
+      const diseaseCounts = {};
+      items.forEach(x => {
+        const key = x.disease_ar || x.disease || "غير معروف";
+        diseaseCounts[key] = (diseaseCounts[key] || 0) + 1;
+      });
+      const topDisease = Object.entries(diseaseCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || "-";
+      const avgHeat = items.length
+        ? Math.round(items.reduce((a,b)=>a + Number(b.risk_score || 0), 0) / items.length)
+        : 0;
+
+      document.getElementById("statPoints").textContent = items.length;
+      document.getElementById("statZones").textContent = zones.length;
+      document.getElementById("statTopZone").textContent = zones[0]?.region || "-";
+      document.getElementById("statTopDisease").textContent = topDisease;
+      document.getElementById("statHeat").textContent = avgHeat;
+
+      document.getElementById("pointsMini").textContent = items.length;
+      document.getElementById("zonesMini").textContent = zones.length;
+      document.getElementById("weatherMini").textContent = weatherItems.length;
+      document.getElementById("heatMini").textContent = avgHeat;
+    }
+
+    function renderZonesList(items){
+      const box = document.getElementById("zonesList");
+      if(!items.length){
+        box.innerHTML = `<div class="item">لا توجد بيانات مناطق.</div>`;
+        return;
+      }
+
+      box.innerHTML = items.map(z => `
+        <div class="item">
+          <div class="item-top">
+            <div class="item-title">${z.region}</div>
+            <span class="badge ${riskClass(z.avg_risk)}">${riskLabel(z.avg_risk)}</span>
+          </div>
+          <div class="item-meta">
+            عدد الحالات: ${z.count}<br>
+            المؤكدة: ${z.confirmed}<br>
+            أكثر مرض: ${z.top_disease}<br>
+            متوسط الشدة: ${z.avg_severity_percent}%
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderCasesList(items){
+      const box = document.getElementById("casesList");
+      if(!items.length){
+        box.innerHTML = `<div class="item">لا توجد حالات مكانية مطابقة للفلاتر.</div>`;
+        return;
+      }
+
+      box.innerHTML = items.slice(0,12).map(item => `
+        <div class="item">
+          <div class="item-top">
+            <div class="item-title">${item.region || "غير محددة"}</div>
+            <span class="badge ${riskClass(item.risk_score)}">${riskLabel(item.risk_score)}</span>
+          </div>
+          <div class="item-meta">
+            ${item.plant_ar || item.plant || "-"} — ${item.disease_ar || item.disease || "-"}<br>
+            الثقة: ${item.confidence ?? "-"}%<br>
+            الوقت: ${item.timestamp || "-"}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function fitToCases(items){
+      const pts = items.filter(x => x.latitude != null && x.longitude != null);
+      if(!pts.length) return;
+      const bounds = L.latLngBounds(pts.map(x => [x.latitude, x.longitude]));
+      map.fitBounds(bounds.pad(0.2));
+    }
+
+    async function loadMapCenter(){
+      try{
+        const [health, mapRes, zonesRes, weatherRes, regionsGeo] = await Promise.all([
+          getJSON("/health"),
+          getJSON("/map_data"),
+          getJSON("/zones_summary"),
+          getJSON("/weather_points"),
+          getJSON("/regions_geojson"),
+        ]);
+
+        document.getElementById("apiStatus").textContent = health.status === "ok" ? "Online" : "Offline";
+
+        rawCases = mapRes.items || [];
+        rawZones = zonesRes.items || [];
+        rawWeather = weatherRes.items || [];
+        rawRegionsGeo = regionsGeo;
+
+        buildRegionOptions(rawCases);
+
+        const filteredCases = applyFilters(rawCases);
+
+        renderStats(filteredCases, rawZones, rawWeather);
+        renderSpatialBrief(filteredCases, rawZones);
+        renderMarkers(filteredCases);
+        renderHeatmap(filteredCases);
+        renderWeather(rawWeather);
+        renderRegions(rawRegionsGeo, rawZones);
+        renderZonesList(rawZones);
+        renderCasesList(filteredCases);
+        nowTime();
+
+      } catch(e){
+        document.getElementById("apiStatus").textContent = "Error";
+      }
+    }
+
+    document.getElementById("reloadBtn").addEventListener("click", loadMapCenter);
+
+    document.getElementById("criticalBtn").addEventListener("click", () => {
+      document.getElementById("riskFilter").value = "critical";
+      const filteredCases = applyFilters(rawCases);
+      renderStats(filteredCases, rawZones, rawWeather);
+      renderSpatialBrief(filteredCases, rawZones);
+      renderMarkers(filteredCases);
+      renderHeatmap(filteredCases);
+      renderCasesList(filteredCases);
+      fitToCases(filteredCases);
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      document.getElementById("regionFilter").value = "all";
+      document.getElementById("riskFilter").value = "all";
+      document.getElementById("searchInput").value = "";
+
+      const filteredCases = applyFilters(rawCases);
+      renderStats(filteredCases, rawZones, rawWeather);
+      renderSpatialBrief(filteredCases, rawZones);
+      renderMarkers(filteredCases);
+      renderHeatmap(filteredCases);
+      renderCasesList(filteredCases);
+      map.setView([23.8859, 45.0792], 5);
+    });
+
+    document.getElementById("riskFilter").addEventListener("change", () => {
+      const filteredCases = applyFilters(rawCases);
+      renderStats(filteredCases, rawZones, rawWeather);
+      renderSpatialBrief(filteredCases, rawZones);
+      renderMarkers(filteredCases);
+      renderHeatmap(filteredCases);
+      renderCasesList(filteredCases);
+    });
+
+    document.getElementById("regionFilter").addEventListener("change", () => {
+      const filteredCases = applyFilters(rawCases);
+      renderStats(filteredCases, rawZones, rawWeather);
+      renderSpatialBrief(filteredCases, rawZones);
+      renderMarkers(filteredCases);
+      renderHeatmap(filteredCases);
+      renderCasesList(filteredCases);
+    });
+
+    document.getElementById("searchInput").addEventListener("input", () => {
+      const filteredCases = applyFilters(rawCases);
+      renderStats(filteredCases, rawZones, rawWeather);
+      renderSpatialBrief(filteredCases, rawZones);
+      renderMarkers(filteredCases);
+      renderHeatmap(filteredCases);
+      renderCasesList(filteredCases);
+    });
+
+    document.getElementById("toggleMarkersBtn").addEventListener("click", () => {
+      markersVisible = !markersVisible;
+      document.getElementById("regionsStatus").textContent = regionsVisible ? "On" : "Off";
+      renderMarkers(applyFilters(rawCases));
+    });
+
+    document.getElementById("toggleHeatBtn").addEventListener("click", () => {
+      heatVisible = !heatVisible;
+      document.getElementById("heatStatus").textContent = heatVisible ? "On" : "Off";
+      renderHeatmap(applyFilters(rawCases));
+    });
+
+    document.getElementById("toggleWeatherBtn").addEventListener("click", () => {
+      weatherVisible = !weatherVisible;
+      document.getElementById("weatherStatus").textContent = weatherVisible ? "On" : "Off";
+      renderWeather(rawWeather);
+    });
+
+    document.getElementById("toggleRegionsBtn").addEventListener("click", () => {
+      regionsVisible = !regionsVisible;
+      document.getElementById("regionsStatus").textContent = regionsVisible ? "On" : "Off";
+      renderRegions(rawRegionsGeo, rawZones);
+    });
+
+    document.getElementById("fitBtn").addEventListener("click", () => {
+      fitToCases(applyFilters(rawCases));
+    });
+
+    initMap();
+    loadMapCenter();
+    setInterval(loadMapCenter, 15000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phytologic AI - Ops Center</title>
+
+  <style>
+    :root{
+      --bg:#071321;
+      --panel:#0f223d;
+      --panel2:#132a4d;
+      --line:rgba(255,255,255,.08);
+      --text:#eef4ff;
+      --muted:#9fb2cf;
+      --blue:#38bdf8;
+      --green:#22c55e;
+      --yellow:#f59e0b;
+      --red:#ef4444;
+      --pink:#ec4899;
+      --cyan:#06b6d4;
+      --shadow:0 12px 28px rgba(0,0,0,.25);
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      font-family:Tahoma, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(6,182,212,.08), transparent 18%),
+        radial-gradient(circle at top right, rgba(56,189,248,.08), transparent 16%),
+        linear-gradient(180deg,#06111d 0%, #081729 100%);
+      color:var(--text);
+    }
+
+    .app{
+      display:grid;
+      grid-template-columns:280px 1fr;
+      min-height:100vh;
+    }
+
+    .sidebar{
+      background:linear-gradient(180deg, rgba(15,34,61,.98), rgba(10,24,45,.98));
+      border-left:1px solid var(--line);
+      padding:18px 16px;
+      position:sticky;
+      top:0;
+      height:100vh;
+      overflow:auto;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 16px;
+      border-radius:20px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      margin-bottom:16px;
+      box-shadow:var(--shadow);
+    }
+
+    .brand h1{
+      margin:0;
+      font-size:18px;
+      line-height:1.2;
+    }
+
+    .brand small{
+      display:block;
+      color:var(--muted);
+      margin-top:4px;
+      font-size:11px;
+    }
+
+    .brand-logo{
+      width:46px;
+      height:46px;
+      border-radius:14px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg, rgba(6,182,212,.24), rgba(56,189,248,.18));
+      font-size:22px;
+    }
+
+    .nav{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-bottom:16px;
+    }
+
+    .nav a{
+      color:var(--text);
+      text-decoration:none;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid transparent;
+      transition:.18s ease;
+      font-size:14px;
+    }
+
+    .nav a:hover,
+    .nav a.active{
+      background:linear-gradient(90deg, rgba(6,182,212,.18), rgba(56,189,248,.10));
+      border-color:var(--line);
+    }
+
+    .side-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      margin-bottom:14px;
+      box-shadow:var(--shadow);
+    }
+
+    .side-card h3{
+      margin:0 0 10px;
+      font-size:14px;
+    }
+
+    .side-row{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:7px 0;
+      border-bottom:1px dashed rgba(255,255,255,.06);
+      font-size:13px;
+    }
+
+    .side-row:last-child{border-bottom:none}
+    .side-row span:first-child{color:var(--muted)}
+
+    .main{
+      padding:18px;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .hero-main{
+      background:linear-gradient(135deg, rgba(6,182,212,.16), rgba(34,197,94,.12));
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:22px;
+      box-shadow:var(--shadow);
+    }
+
+    .hero-main h2{
+      margin:0 0 10px;
+      font-size:24px;
+      line-height:1.3;
+    }
+
+    .hero-main p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.9;
+      font-size:14px;
+    }
+
+    .hero-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:16px;
+    }
+
+    .btn{
+      border:none;
+      border-radius:12px;
+      padding:10px 14px;
+      font-weight:bold;
+      cursor:pointer;
+      transition:.18s ease;
+      font-family:inherit;
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg,#0891b2,#2563eb);
+      color:#fff;
+    }
+
+    .btn-light{
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      border:1px solid var(--line);
+    }
+
+    .btn:hover{transform:translateY(-1px)}
+
+    .panel{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .panel-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      font-weight:bold;
+    }
+
+    .panel-body{
+      padding:16px;
+    }
+
+    .kpi-grid{
+      display:grid;
+      grid-template-columns:repeat(6,1fr);
+      gap:14px;
+      margin-bottom:16px;
+    }
+
+    .kpi{
+      background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      box-shadow:var(--shadow);
+      position:relative;
+    }
+
+    .kpi::before{
+      content:"";
+      position:absolute;
+      inset:0 0 auto 0;
+      height:3px;
+      border-radius:18px 18px 0 0;
+      background:linear-gradient(90deg, rgba(6,182,212,.2), rgba(56,189,248,.95));
+    }
+
+    .kpi-label{
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:10px;
+    }
+
+    .kpi-value{
+      font-size:30px;
+      font-weight:800;
+      line-height:1;
+      margin-bottom:8px;
+    }
+
+    .kpi-sub{
+      font-size:12px;
+      color:#c8d6eb;
+    }
+
+    .ops-layout{
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .queue-list{
+      display:grid;
+      gap:12px;
+    }
+
+    .task-card{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px;
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      padding:16px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .task-card::before{
+      content:"";
+      position:absolute;
+      top:0;
+      bottom:0;
+      right:0;
+      width:5px;
+      background:var(--blue);
+    }
+
+    .task-card.low::before{background:var(--green)}
+    .task-card.medium::before{background:var(--yellow)}
+    .task-card.high::before{background:var(--red)}
+    .task-card.critical::before{background:var(--pink)}
+
+    .task-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:10px;
+    }
+
+    .task-title{
+      font-size:16px;
+      font-weight:800;
+      margin-bottom:4px;
+    }
+
+    .task-sub{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.7;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      padding:5px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:bold;
+      white-space:nowrap;
+    }
+
+    .low{background:rgba(34,197,94,.14);color:#86efac}
+    .medium{background:rgba(245,158,11,.14);color:#fde68a}
+    .high{background:rgba(239,68,68,.14);color:#fca5a5}
+    .critical{background:rgba(236,72,153,.14);color:#f9a8d4}
+    .info{background:rgba(56,189,248,.14);color:#93c5fd}
+
+    .task-meta{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .meta-box{
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:12px;
+      padding:10px;
+      background:rgba(255,255,255,.03);
+    }
+
+    .meta-label{
+      font-size:11px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+
+    .meta-value{
+      font-size:14px;
+      font-weight:bold;
+    }
+
+    .ops-box{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      padding:14px;
+      background:rgba(255,255,255,.03);
+      margin-bottom:12px;
+    }
+
+    .ops-box:last-child{margin-bottom:0}
+
+    .ops-box h4{
+      margin:0 0 8px;
+      font-size:15px;
+    }
+
+    .ops-box p{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.8;
+    }
+
+    .mini-actions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .mini-btn{
+      border:none;
+      border-radius:10px;
+      padding:8px 10px;
+      font-size:12px;
+      cursor:pointer;
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .grid-bottom{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:16px;
+    }
+
+    .list{
+      max-height:380px;
+      overflow:auto;
+    }
+
+    .item{
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:14px;
+      background:rgba(255,255,255,.03);
+      padding:12px;
+      margin-bottom:10px;
+    }
+
+    .item:last-child{margin-bottom:0}
+
+    .item-top{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:8px;
+    }
+
+    .item-title{
+      font-weight:bold;
+      font-size:14px;
+    }
+
+    .item-meta{
+      color:var(--muted);
+      line-height:1.8;
+      font-size:13px;
+    }
+
+    .empty{
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.8;
+    }
+
+    .footer{
+      color:var(--muted);
+      font-size:12px;
+      text-align:center;
+      margin-top:12px;
+    }
+
+    @media (max-width:1450px){
+      .kpi-grid{grid-template-columns:repeat(3,1fr)}
+      .grid-bottom{grid-template-columns:1fr}
+    }
+
+    @media (max-width:1100px){
+      .app{grid-template-columns:1fr}
+      .sidebar{
+        position:relative;
+        height:auto;
+        border-left:none;
+        border-bottom:1px solid var(--line);
+      }
+      .hero,.ops-layout{grid-template-columns:1fr}
+    }
+
+    @media (max-width:700px){
+      .kpi-grid{grid-template-columns:1fr 1fr}
+      .task-meta{grid-template-columns:1fr 1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div>
+          <h1>Phytologic AI</h1>
+          <small>Daily Operations Layer</small>
+        </div>
+        <div class="brand-logo">🛠️</div>
+      </div>
+
+      <div class="nav">
+        <a href="/national_center">المركز الوطني</a>
+        <a href="/ui">التشخيص الذكي</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/alerts_page">Alerts</a>
+        <a href="/forecast_ai">Forecast AI</a>
+        <a href="/admin">Admin</a>
+        <a href="/ops" class="active">Ops</a>
+        <a href="/reports_center">Reports</a>
+      </div>
+
+      <div class="side-card">
+        <h3>Ops Pulse</h3>
+        <div class="side-row"><span>API</span><span id="apiStatus">...</span></div>
+        <div class="side-row"><span>Ops Queue</span><span id="queueMini">0</span></div>
+        <div class="side-row"><span>Forecast</span><span id="forecastMini">0</span></div>
+        <div class="side-row"><span>آخر تحديث</span><span id="lastUpdateLabel">--:--</span></div>
+      </div>
+
+      <div class="side-card">
+        <h3>Ready Actions</h3>
+        <div class="side-row"><span>حرج</span><span id="criticalMini">0</span></div>
+        <div class="side-row"><span>مرتفع</span><span id="highMini">0</span></div>
+        <div class="side-row"><span>متابعة</span><span id="followMini">0</span></div>
+        <div class="side-row"><span>مؤكد</span><span id="confirmedMini">0</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="hero">
+        <div class="hero-main">
+          <h2>Operations Center — Daily Field Action Workflow</h2>
+          <p>
+            هذه الواجهة ليست إدارية مثل Admin، بل مخصصة لفرق التشغيل اليومية: ماذا يجب فعله الآن، أي الحالات تُعالج أولًا، أي المناطق تحتاج متابعة ميدانية، وما أولويات الـ 24 إلى 72 ساعة القادمة.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" id="reloadBtn">تحديث العمليات</button>
+            <button class="btn btn-light" id="criticalOnlyBtn">أولوية حرجة</button>
+            <button class="btn btn-light" id="resetBtn">إعادة الضبط</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">Ops Mission Brief</div>
+          <div class="panel-body" id="missionBrief">
+            <div class="ops-box">
+              <h4>جاري التحليل</h4>
+              <p>سيتم توليد تعليمات تشغيلية يومية بعد تحميل البيانات.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">مهام التشغيل</div>
+          <div class="kpi-value" id="kpiQueue">0</div>
+          <div class="kpi-sub">العناصر التي تستحق إجراءً فعليًا</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">حرج الآن</div>
+          <div class="kpi-value" id="kpiCritical">0</div>
+          <div class="kpi-sub">تدخل عاجل</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">مرتفع اليوم</div>
+          <div class="kpi-value" id="kpiHigh">0</div>
+          <div class="kpi-sub">رصد لصيق واستجابة سريعة</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">متابعة ميدانية</div>
+          <div class="kpi-value" id="kpiFollow">0</div>
+          <div class="kpi-sub">تحتاج فحص أو تحقق إضافي</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">أعلى منطقة عمل</div>
+          <div class="kpi-value" id="kpiTopRegion">-</div>
+          <div class="kpi-sub">أعلى ضغط تشغيلي</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">أعلى Forecast 72h</div>
+          <div class="kpi-value" id="kpiForecast">0</div>
+          <div class="kpi-sub">أعلى ضغط متوقع</div>
+        </div>
+      </section>
+
+      <section class="ops-layout">
+        <div class="panel">
+          <div class="panel-head">
+            <span>Work Queue</span>
+            <span id="queueCountLabel">0 tasks</span>
+          </div>
+          <div class="panel-body">
+            <div class="queue-list" id="queueList">
+              <div class="empty">جاري تحميل قائمة المهام...</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;gap:16px;">
+          <div class="panel">
+            <div class="panel-head">Field Playbooks</div>
+            <div class="panel-body" id="playbooksBox">
+              <div class="ops-box">
+                <h4>Immediate Response</h4>
+                <p>سيتم بناء أفضل سيناريوهات الاستجابة حسب الحالات الحالية.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">Shift Monitoring</div>
+            <div class="panel-body" id="monitorBox">
+              <div class="ops-box">
+                <h4>Shift View</h4>
+                <p>جاري تحميل بيانات المتابعة اليومية.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid-bottom">
+        <div class="panel">
+          <div class="panel-head">Regional Pressure</div>
+          <div class="panel-body list" id="zonesBox">
+            <div class="empty">جاري تحميل المناطق...</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">Forecast Watch</div>
+          <div class="panel-body list" id="forecastBox">
+            <div class="empty">جاري تحميل التوقع...</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">Recent Verified Flow</div>
+          <div class="panel-body list" id="recentBox">
+            <div class="empty">جاري تحميل الحالات...</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="footer">
+        Phytologic AI — Ops Center
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let rawAlerts = [];
+    let rawZones = [];
+    let rawForecast = [];
+    let rawRecent = [];
+    let criticalOnly = false;
+
+    function nowTime(){
+      document.getElementById("lastUpdateLabel").textContent = new Date().toLocaleTimeString("ar-SA");
+    }
+
+    function animateNumber(id, target){
+      const el = document.getElementById(id);
+      const end = Number(target) || 0;
+      const start = Number(el.dataset.current || 0);
+      const duration = 350;
+      const steps = 20;
+      const stepValue = (end - start) / steps;
+      let current = start;
+      let step = 0;
+
+      const timer = setInterval(() => {
+        step++;
+        current += stepValue;
+        if(step >= steps){
+          el.textContent = end;
+          el.dataset.current = end;
+          clearInterval(timer);
+        } else {
+          el.textContent = Math.round(current);
+        }
+      }, duration / steps);
+    }
+
+    function riskClass(score){
+      const s = Number(score) || 0;
+      if(s >= 85) return "critical";
+      if(s >= 70) return "high";
+      if(s >= 45) return "medium";
+      return "low";
+    }
+
+    function riskLabel(score){
+      const s = Number(score) || 0;
+      if(s >= 85) return "حرج";
+      if(s >= 70) return "مرتفع";
+      if(s >= 45) return "متوسط";
+      return "منخفض";
+    }
+
+    function buildTaskPriority(item){
+      const score = Number(item.risk_score || 0);
+      const uncertain = (item.decision || "") === "غير مؤكد";
+      const spread = item.spread_risk || "";
+
+      if(score >= 85 || (spread === "مرتفع" && uncertain)) return "critical";
+      if(score >= 70 || spread === "مرتفع") return "high";
+      if(uncertain || score >= 45) return "medium";
+      return "low";
+    }
+
+    function buildTaskAction(item){
+      const p = buildTaskPriority(item);
+      if(p === "critical") return "إرسال استجابة عاجلة + مراجعة ميدانية فورية";
+      if(p === "high") return "فحص خلال نفس اليوم + مراجعة التوصيات";
+      if(p === "medium") return "متابعة ميدانية خلال 24 ساعة";
+      return "مراقبة دورية";
+    }
+
+    function buildQueue(items){
+      const queue = items.map(item => ({
+        ...item,
+        priority: buildTaskPriority(item),
+        action: buildTaskAction(item)
+      }));
+
+      const order = {critical:0, high:1, medium:2, low:3};
+      queue.sort((a,b) => order[a.priority] - order[b.priority] || (Number(b.risk_score||0) - Number(a.risk_score||0)));
+
+      return criticalOnly ? queue.filter(x => x.priority === "critical") : queue;
+    }
+
+    function renderMissionBrief(queue){
+      const box = document.getElementById("missionBrief");
+
+      if(!queue.length){
+        box.innerHTML = `
+          <div class="ops-box">
+            <h4>لا توجد مهام حرجة الآن</h4>
+            <p>قائمة التشغيل الحالية فارغة أو لا تحتوي على حالات مطابقة لفلتر الأولوية.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const first = queue[0];
+      const regionCount = {};
+      queue.forEach(x => {
+        const r = x.region || "غير محددة";
+        regionCount[r] = (regionCount[r] || 0) + 1;
+      });
+      const topRegion = Object.entries(regionCount).sort((a,b)=>b[1]-a[1])[0]?.[0] || "-";
+
+      box.innerHTML = `
+        <div class="ops-box">
+          <h4>Priority 1</h4>
+          <p>ابدأ بـ ${first.plant_ar || first.plant || "-"} / ${first.disease_ar || first.disease || "-"} في ${first.region || "غير محددة"}.</p>
+        </div>
+        <div class="ops-box">
+          <h4>Field Focus</h4>
+          <p>المنطقة الأعلى ضغطًا تشغيليًا الآن هي ${topRegion}. يوصى بتخصيص المتابعة اليومية لها أولًا.</p>
+        </div>
+        <div class="ops-box">
+          <h4>Execution Note</h4>
+          <p>رتّب الاستجابة حسب: حرج ← مرتفع ← متابعة، وامنح الأولوية للحالات غير المؤكدة عالية الخطر.</p>
+        </div>
+      `;
+    }
+
+    function renderKPIs(queue){
+      const critical = queue.filter(x => x.priority === "critical").length;
+      const high = queue.filter(x => x.priority === "high").length;
+      const follow = queue.filter(x => x.priority === "medium").length;
+      const confirmed = queue.filter(x => (x.decision || "") === "مؤكد").length;
+
+      const regionCount = {};
+      queue.forEach(x => {
+        const r = x.region || "غير محددة";
+        regionCount[r] = (regionCount[r] || 0) + 1;
+      });
+      const topRegion = Object.entries(regionCount).sort((a,b)=>b[1]-a[1])[0]?.[0] || "-";
+
+      animateNumber("kpiQueue", queue.length);
+      animateNumber("kpiCritical", critical);
+      animateNumber("kpiHigh", high);
+      animateNumber("kpiFollow", follow);
+      animateNumber("kpiForecast", Math.round(rawForecast[0]?.risk_72h || 0));
+
+      document.getElementById("kpiTopRegion").textContent = topRegion;
+      document.getElementById("queueCountLabel").textContent = `${queue.length} tasks`;
+
+      document.getElementById("queueMini").textContent = queue.length;
+      document.getElementById("criticalMini").textContent = critical;
+      document.getElementById("highMini").textContent = high;
+      document.getElementById("followMini").textContent = follow;
+      document.getElementById("confirmedMini").textContent = confirmed;
+      document.getElementById("forecastMini").textContent = rawForecast.length;
+    }
+
+    function renderQueue(queue){
+      const list = document.getElementById("queueList");
+
+      if(!queue.length){
+        list.innerHTML = `<div class="empty">لا توجد مهام تشغيلية حالية.</div>`;
+        return;
+      }
+
+      list.innerHTML = queue.map(item => `
+        <div class="task-card ${item.priority}">
+          <div class="task-top">
+            <div>
+              <div class="task-title">${item.plant_ar || item.plant || "-"} — ${item.disease_ar || item.disease || "-"}</div>
+              <div class="task-sub">
+                الإجراء المقترح: ${item.action}<br>
+                المنطقة: ${item.region || "غير محددة"} | القرار: ${item.decision || "-"} | الوقت: ${item.timestamp || "-"}
+              </div>
+            </div>
+            <span class="badge ${item.priority}">${item.priority === "critical" ? "أولوية 1" : item.priority === "high" ? "أولوية 2" : item.priority === "medium" ? "متابعة" : "مراقبة"}</span>
+          </div>
+
+          <div class="task-meta">
+            <div class="meta-box">
+              <div class="meta-label">الثقة</div>
+              <div class="meta-value">${item.confidence ?? "-"}%</div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-label">الخطر</div>
+              <div class="meta-value">${item.risk_score ?? 0}</div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-label">الانتشار</div>
+              <div class="meta-value">${item.spread_risk || "-"}</div>
+            </div>
+            <div class="meta-box">
+              <div class="meta-label">المطابقة</div>
+              <div class="meta-value">${item.crop_disease_match === false ? "غير مطابق" : "مطابق"}</div>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderPlaybooks(queue){
+      const box = document.getElementById("playbooksBox");
+      const critical = queue.filter(x => x.priority === "critical").length;
+      const high = queue.filter(x => x.priority === "high").length;
+
+      box.innerHTML = `
+        <div class="ops-box">
+          <h4>Immediate Response</h4>
+          <p>ابدأ بالحالات الحرجة (${critical}) ثم تحرك للحالات المرتفعة (${high}) في نفس دورة التشغيل.</p>
+          <div class="mini-actions">
+            <button class="mini-btn">Assign Field</button>
+            <button class="mini-btn">Review Images</button>
+          </div>
+        </div>
+
+        <div class="ops-box">
+          <h4>Verification Loop</h4>
+          <p>الحالات غير المؤكدة يجب أن تمرّ بمراجعة صورة أو زيارة قصيرة قبل تثبيت القرار النهائي.</p>
+          <div class="mini-actions">
+            <button class="mini-btn">Verify</button>
+            <button class="mini-btn">Escalate</button>
+          </div>
+        </div>
+
+        <div class="ops-box">
+          <h4>Daily Routing</h4>
+          <p>أعد ترتيب الجولات اليومية حسب المنطقة الأعلى ضغطًا ثم حسب أولوية المرض ودرجة الخطر.</p>
+          <div class="mini-actions">
+            <button class="mini-btn">Build Route</button>
+            <button class="mini-btn">Dispatch</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMonitor(queue){
+      const box = document.getElementById("monitorBox");
+      const topRegion = rawZones[0]?.region || "-";
+      const topForecast = rawForecast[0]?.region || "-";
+      const topForecastRisk = rawForecast[0]?.risk_72h || 0;
+
+      box.innerHTML = `
+        <div class="ops-box">
+          <h4>Shift Focus</h4>
+          <p>المنطقة الأعلى ضغطًا الآن: ${topRegion}.</p>
+        </div>
+        <div class="ops-box">
+          <h4>Forecast Watch</h4>
+          <p>تابع منطقة ${topForecast} لأنها الأعلى توقعًا خلال 72 ساعة بمستوى ${topForecastRisk}.</p>
+        </div>
+        <div class="ops-box">
+          <h4>Queue Health</h4>
+          <p>إجمالي قائمة العمل الحالية: ${queue.length} مهمة تشغيلية.</p>
+        </div>
+      `;
+    }
+
+    function renderZones(items){
+      const box = document.getElementById("zonesBox");
+      if(!items.length){
+        box.innerHTML = `<div class="empty">لا توجد بيانات مناطق.</div>`;
+        return;
+      }
+
+      box.innerHTML = items.map(z => `
+        <div class="item">
+          <div class="item-top">
+            <div class="item-title">${z.region}</div>
+            <span class="badge ${riskClass(z.avg_risk)}">${riskLabel(z.avg_risk)}</span>
+          </div>
+          <div class="item-meta">
+            عدد الحالات: ${z.count}<br>
+            المؤكدة: ${z.confirmed}<br>
+            متوسط الخطر: ${z.avg_risk}<br>
+            متوسط الشدة: ${z.avg_severity_percent}%<br>
+            أكثر مرض: ${z.top_disease}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderForecast(items){
+      const box = document.getElementById("forecastBox");
+      if(!items.length){
+        box.innerHTML = `<div class="empty">لا توجد بيانات Forecast حالية.</div>`;
+        return;
+      }
+
+      box.innerHTML = items.map(f => `
+        <div class="item">
+          <div class="item-top">
+            <div class="item-title">${f.region}</div>
+            <span class="badge ${riskClass(f.risk_72h)}">${f.trend}</span>
+          </div>
+          <div class="item-meta">
+            المرض الأبرز: ${f.top_disease}<br>
+            24h: ${f.risk_24h}<br>
+            48h: ${f.risk_48h}<br>
+            72h: ${f.risk_72h}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderRecent(items){
+      const box = document.getElementById("recentBox");
+      if(!items.length){
+        box.innerHTML = `<div class="empty">لا توجد حالات حديثة.</div>`;
+        return;
+      }
+
+      box.innerHTML = items.map(r => `
+        <div class="item">
+          <div class="item-top">
+            <div class="item-title">${r.plant_ar || r.plant || "-"}</div>
+            <span class="badge ${r.decision === "مؤكد" ? "low" : "medium"}">${r.decision || "-"}</span>
+          </div>
+          <div class="item-meta">
+            المرض: ${r.disease_ar || r.disease || "-"}<br>
+            الثقة: ${r.confidence ?? "-"}%<br>
+            الخطر: ${r.spread_risk || "-"}<br>
+            المنطقة: ${r.region || "غير محددة"}<br>
+            الوقت: ${r.timestamp || "-"}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function getJSON(url){
+      const res = await fetch(url);
+      return await res.json();
+    }
+
+    async function loadOps(){
+      try{
+        const [health, alertsRes, zonesRes, forecastRes, recentRes] = await Promise.all([
+          getJSON("/health"),
+          getJSON("/alerts"),
+          getJSON("/zones_summary"),
+          getJSON("/forecast_ai"),
+          getJSON("/recent"),
+        ]);
+
+        rawAlerts = alertsRes.items || [];
+        rawZones = zonesRes.items || [];
+        rawForecast = forecastRes.items || [];
+        rawRecent = recentRes.items || [];
+
+        document.getElementById("apiStatus").textContent = health.status === "ok" ? "Online" : "Offline";
+
+        const queue = buildQueue(rawAlerts);
+        renderMissionBrief(queue);
+        renderKPIs(queue);
+        renderQueue(queue);
+        renderPlaybooks(queue);
+        renderMonitor(queue);
+        renderZones(rawZones);
+        renderForecast(rawForecast);
+        renderRecent(rawRecent);
+        nowTime();
+
+      } catch(e){
+        document.getElementById("apiStatus").textContent = "Error";
+      }
+    }
+
+    document.getElementById("reloadBtn").addEventListener("click", loadOps);
+
+    document.getElementById("criticalOnlyBtn").addEventListener("click", () => {
+      criticalOnly = true;
+      loadOps();
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      criticalOnly = false;
+      loadOps();
+    });
+
+    loadOps();
+    setInterval(loadOps, 15000);
+  </script>
+</body>
+</html>

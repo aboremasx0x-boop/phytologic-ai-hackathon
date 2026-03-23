@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Phytologic AI - Command Center</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Tahoma;
+    background:#0f172a;
+    color:white;
+}
+
+.header{
+    padding:20px;
+    background:linear-gradient(135deg,#0f2d52,#12664b);
+    text-align:center;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:15px;
+    padding:20px;
+}
+
+.card{
+    background:#1e293b;
+    padding:15px;
+    border-radius:12px;
+}
+
+.title{
+    font-size:13px;
+    color:#94a3b8;
+}
+
+.value{
+    font-size:22px;
+    font-weight:bold;
+}
+
+.table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.table td{
+    padding:8px;
+    border-bottom:1px solid #334155;
+}
+
+.alert{
+    background:#7f1d1d;
+    padding:10px;
+    border-radius:10px;
+    margin-bottom:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <h1>Phytologic AI - Command Center</h1>
+</div>
+
+<div class="grid">
+    <div class="card"><div class="title">إجمالي العمليات</div><div id="total" class="value">-</div></div>
+    <div class="card"><div class="title">مؤكد</div><div id="confirmed" class="value">-</div></div>
+    <div class="card"><div class="title">غير مؤكد</div><div id="uncertain" class="value">-</div></div>
+    <div class="card"><div class="title">Top Plant</div><div id="topPlant" class="value">-</div></div>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h3>آخر الحالات</h3>
+        <table class="table" id="recentTable"></table>
+    </div>
+
+    <div class="card">
+        <h3>تنبيهات</h3>
+        <div id="alertsBox"></div>
+    </div>
+</div>
+
+<script>
+
+const API = "http://127.0.0.1:8000";
+
+async function loadStats(){
+    const res = await fetch(API + "/stats");
+    const data = await res.json();
+
+    document.getElementById("total").innerText = data.total_predictions;
+    document.getElementById("confirmed").innerText = data.confirmed;
+    document.getElementById("uncertain").innerText = data.uncertain;
+
+    if(data.top_plants.length){
+        document.getElementById("topPlant").innerText = data.top_plants[0].plant;
+    }
+}
+
+async function loadRecent(){
+    const res = await fetch(API + "/recent");
+    const data = await res.json();
+
+    const table = document.getElementById("recentTable");
+    table.innerHTML = "";
+
+    data.items.forEach(item=>{
+        table.innerHTML += `
+        <tr>
+            <td>${item.plant_ar}</td>
+            <td>${item.disease_ar}</td>
+            <td>${item.confidence}%</td>
+        </tr>
+        `;
+    });
+}
+
+async function loadAlerts(){
+    const res = await fetch(API + "/alerts");
+    const data = await res.json();
+
+    const box = document.getElementById("alertsBox");
+    box.innerHTML = "";
+
+    data.items.forEach(a=>{
+        box.innerHTML += `
+        <div class="alert">
+            ${a.plant_ar} - ${a.disease_ar}
+            <br>
+            ${a.spread_risk}
+        </div>
+        `;
+    });
+}
+
+setInterval(()=>{
+    loadStats();
+    loadRecent();
+    loadAlerts();
+},5000);
+
+loadStats();
+loadRecent();
+loadAlerts();
+
+</script>
+
+</body>
+</html>

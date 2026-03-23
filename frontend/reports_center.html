@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phytologic AI - Reports Center</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+  margin:0;
+  font-family:Tahoma;
+  background:#0b1220;
+  color:#fff;
+}
+
+.container{
+  padding:20px;
+}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:20px;
+}
+
+.title{
+  font-size:26px;
+  font-weight:bold;
+}
+
+.btn{
+  background:#2563eb;
+  border:none;
+  color:#fff;
+  padding:10px 14px;
+  border-radius:10px;
+  cursor:pointer;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;
+}
+
+.card{
+  background:#121c2f;
+  padding:15px;
+  border-radius:16px;
+}
+
+.label{color:#94a3b8;font-size:13px}
+.value{font-size:24px;font-weight:bold;margin-top:6px}
+
+.section{
+  margin-top:20px;
+}
+
+.chart{
+  height:300px;
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+.table th, .table td{
+  padding:10px;
+  border-bottom:1px solid #1f2a44;
+  text-align:center;
+}
+
+.filter{
+  margin-top:15px;
+  display:flex;
+  gap:10px;
+}
+
+input, select{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+  <div class="title">📑 Reports Center</div>
+  <button class="btn" onclick="exportData()">Export CSV</button>
+</div>
+
+<div class="grid">
+  <div class="card"><div class="label">إجمالي الحالات</div><div id="total" class="value">0</div></div>
+  <div class="card"><div class="label">متوسط الخطر</div><div id="risk" class="value">0</div></div>
+  <div class="card"><div class="label">أعلى مرض</div><div id="topDisease" class="value">-</div></div>
+  <div class="card"><div class="label">أعلى منطقة</div><div id="topRegion" class="value">-</div></div>
+</div>
+
+<div class="section">
+  <h3>تحليل الأمراض</h3>
+  <canvas id="diseaseChart" class="chart"></canvas>
+</div>
+
+<div class="section">
+  <h3>تحليل المناطق</h3>
+  <canvas id="regionChart" class="chart"></canvas>
+</div>
+
+<div class="section">
+  <h3>فلترة البيانات</h3>
+  <div class="filter">
+    <input id="search" placeholder="بحث..." />
+    <select id="regionFilter"></select>
+  </div>
+</div>
+
+<div class="section">
+  <h3>تفاصيل الحالات</h3>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>النبات</th>
+        <th>المرض</th>
+        <th>الثقة</th>
+        <th>الخطر</th>
+        <th>المنطقة</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+</div>
+
+<script>
+
+let rawData = [];
+
+async function load(){
+
+  const stats = await fetch("/stats").then(r=>r.json());
+  const zones = await fetch("/zones_summary").then(r=>r.json());
+  const recent = await fetch("/recent").then(r=>r.json());
+
+  rawData = recent.items;
+
+  document.getElementById("total").innerText = stats.total_predictions;
+
+  const avgRisk = zones.items.reduce((a,b)=>a+b.avg_risk,0)/zones.items.length || 0;
+  document.getElementById("risk").innerText = Math.round(avgRisk);
+
+  document.getElementById("topDisease").innerText =
+    stats.top_diseases[0]?.disease || "-";
+
+  document.getElementById("topRegion").innerText =
+    zones.items[0]?.region || "-";
+
+  buildCharts(stats, zones);
+  buildTable(rawData);
+  buildFilters(rawData);
+}
+
+function buildCharts(stats, zones){
+
+  new Chart(document.getElementById("diseaseChart"),{
+    type:"bar",
+    data:{
+      labels:stats.top_diseases.map(x=>x.disease),
+      datasets:[{data:stats.top_diseases.map(x=>x.count)}]
+    }
+  });
+
+  new Chart(document.getElementById("regionChart"),{
+    type:"bar",
+    data:{
+      labels:zones.items.map(x=>x.region),
+      datasets:[{data:zones.items.map(x=>x.avg_risk)}]
+    }
+  });
+}
+
+function buildTable(data){
+  document.getElementById("tableBody").innerHTML =
+    data.map(x=>`
+      <tr>
+        <td>${x.plant_ar}</td>
+        <td>${x.disease_ar}</td>
+        <td>${x.confidence}%</td>
+        <td>${x.spread_risk}</td>
+        <td>${x.region || "-"}</td>
+      </tr>
+    `).join("");
+}
+
+function buildFilters(data){
+  const regions = [...new Set(data.map(x=>x.region || "-"))];
+
+  document.getElementById("regionFilter").innerHTML =
+    `<option value="all">كل المناطق</option>` +
+    regions.map(r=>`<option value="${r}">${r}</option>`).join("");
+}
+
+document.getElementById("search").addEventListener("input", applyFilters);
+document.getElementById("regionFilter").addEventListener("change", applyFilters);
+
+function applyFilters(){
+  const search = document.getElementById("search").value.toLowerCase();
+  const region = document.getElementById("regionFilter").value;
+
+  const filtered = rawData.filter(x=>{
+    const matchSearch =
+      x.disease_ar.toLowerCase().includes(search) ||
+      x.plant_ar.toLowerCase().includes(search);
+
+    const matchRegion =
+      region==="all" || (x.region||"-")===region;
+
+    return matchSearch && matchRegion;
+  });
+
+  buildTable(filtered);
+}
+
+function exportData(){
+  let csv = "plant,disease,confidence,risk,region\n";
+
+  rawData.forEach(x=>{
+    csv += `${x.plant_ar},${x.disease_ar},${x.confidence},${x.spread_risk},${x.region}\n`;
+  });
+
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = "report.csv";
+  a.click();
+}
+
+load();
+
+</script>
+
+</body>
+</html>
