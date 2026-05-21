@@ -711,37 +711,72 @@ def generate_follow_up_questions() -> List[Dict[str, Any]]:
         {"id": "q2_small_many", "question": "هل البقع كثيرة وصغيرة جدًا ومتفرقة؟"},
         {"id": "q3_gray_center", "question": "هل مركز البقعة فاتح أو رمادي مع حواف داكنة؟"},
         {"id": "q4_lower_leaves", "question": "هل الإصابة بدأت من الأوراق السفلية؟"},
+        {"id": "q5_large_dark_water", "question": "هل البقع كبيرة وغير منتظمة وذات لون بني داكن أو مظهر مائي؟"},
+        {"id": "q6_fast_spread_wet", "question": "هل انتشرت الإصابة بسرعة مع رطوبة عالية أو بعد ري/مطر؟"},
     ]
 
 
 def apply_tomato_questionnaire(initial_choice: Dict[str, Any], top_predictions: List[Dict[str, Any]], answers: Dict[str, Any]) -> Tuple[Dict[str, Any], str]:
     early_item = next((x for x in top_predictions if x["disease"] == "Early_blight"), None)
     septoria_item = next((x for x in top_predictions if x["disease"] == "Septoria_leaf_spot"), None)
+    late_item = next((x for x in top_predictions if x["disease"] == "Late_blight"), None)
 
-    if not early_item or not septoria_item:
-        return initial_choice, "تم الإبقاء على النتيجة الأولية لعدم توفر مرضين للمقارنة."
+    if not early_item and not septoria_item and not late_item:
+        return initial_choice, "تم الإبقاء على النتيجة الأولية لعدم توفر أمراض الطماطم الأساسية للمقارنة."
 
     def is_yes(v):
         return v in [True, "true", "True", 1, "1", "yes", "Yes", "نعم"]
 
     early_score = 0
     septoria_score = 0
+    late_score = 0
 
+    # Early blight: حلقات هدف + غالبًا تبدأ من الأوراق السفلية
     if is_yes(answers.get("q1_bullseye")):
-        early_score += 3
-    if is_yes(answers.get("q2_small_many")):
-        septoria_score += 3
-    if is_yes(answers.get("q3_gray_center")):
-        septoria_score += 2
+        early_score += 4
     if is_yes(answers.get("q4_lower_leaves")):
         early_score += 1
         septoria_score += 1
 
-    if early_score > septoria_score:
-        return early_item, f"تم تعديل النتيجة بعد الأسئلة لصالح اللفحة المبكرة. (Early={early_score}, Septoria={septoria_score})"
-    if septoria_score > early_score:
-        return septoria_item, f"تم تعديل النتيجة بعد الأسئلة لصالح تبقع السبتوريا. (Early={early_score}, Septoria={septoria_score})"
-    return initial_choice, f"الإجابات لم تكن حاسمة، فتم الإبقاء على النتيجة الأولية. (Early={early_score}, Septoria={septoria_score})"
+    # Septoria: بقع صغيرة كثيرة + مركز رمادي أو فاتح بحواف داكنة
+    if is_yes(answers.get("q2_small_many")):
+        septoria_score += 4
+    if is_yes(answers.get("q3_gray_center")):
+        septoria_score += 3
+
+    # Late blight: بقع كبيرة غير منتظمة، بنية داكنة/مائية، وانتشار سريع مع الرطوبة
+    if is_yes(answers.get("q5_large_dark_water")):
+        late_score += 5
+    if is_yes(answers.get("q6_fast_spread_wet")):
+        late_score += 3
+
+    candidates = []
+    if early_item:
+        candidates.append(("Early_blight", early_score, early_item))
+    if septoria_item:
+        candidates.append(("Septoria_leaf_spot", septoria_score, septoria_item))
+    if late_item:
+        candidates.append(("Late_blight", late_score, late_item))
+
+    # إذا لم تضف الأسئلة أي دليل واضح، لا نغيّر اختيار الموديل
+    max_score = max([c[1] for c in candidates]) if candidates else 0
+    if max_score <= 0:
+        return initial_choice, f"الإجابات لم تضف مؤشرات حاسمة، فتم الإبقاء على النتيجة الأولية. (Early={early_score}, Septoria={septoria_score}, Late={late_score})"
+
+    candidates.sort(key=lambda x: x[1], reverse=True)
+    best_name, best_score, best_item = candidates[0]
+
+    # لا نغيّر النتيجة إلا إذا كان الفرق واضحًا
+    second_score = candidates[1][1] if len(candidates) > 1 else 0
+    if best_score - second_score < 2 and initial_choice is not None:
+        return initial_choice, f"الإجابات متقاربة، فتم الإبقاء على النتيجة الأولية. (Early={early_score}, Septoria={septoria_score}, Late={late_score})"
+
+    disease_ar_map = {
+        "Early_blight": "اللفحة المبكرة",
+        "Septoria_leaf_spot": "تبقع السبتوريا",
+        "Late_blight": "اللفحة المتأخرة",
+    }
+    return best_item, f"تم تعديل النتيجة بعد الأسئلة لصالح {disease_ar_map.get(best_name, best_name)}. (Early={early_score}, Septoria={septoria_score}, Late={late_score})"
 
 # =========================================================
 # Stage 3 - فلتر التحقق الذكي
