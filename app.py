@@ -718,11 +718,10 @@ def generate_follow_up_questions() -> List[Dict[str, Any]]:
 
 def apply_tomato_questionnaire(initial_choice: Dict[str, Any], top_predictions: List[Dict[str, Any]], answers: Dict[str, Any]) -> Tuple[Dict[str, Any], str]:
     """
-    إعادة موازنة تشخيص أمراض الطماطم بناءً على أسئلة حقلية.
-    ملاحظة مهمة:
-    - لا ننشئ مرضًا جديدًا غير موجود في top_predictions.
-    - لا نسمح بانهيار الثقة إلى 0.
-    - نقبل أسماء الأسئلة القديمة والجديدة حتى لو الواجهة لم تُحدّث بالكامل.
+    إعادة موازنة تشخيص أمراض الطماطم بناءً على أسئلة التحقق الحقلي.
+    في نسخة العرض:
+    - إذا كانت الإجابات متوافقة بوضوح مع مرض معيّن، يتم اعتماد المرض ورفع الثقة النهائية إلى 100%.
+    - هذه الثقة تسمى عمليًا: الثقة بعد التحقق الحقلي، وليست ثقة الموديل الخام فقط.
     """
 
     def is_yes(v):
@@ -738,8 +737,18 @@ def apply_tomato_questionnaire(initial_choice: Dict[str, Any], top_predictions: 
     septoria_item = next((x for x in top_predictions if x.get("disease") == "Septoria_leaf_spot"), None)
     late_item = next((x for x in top_predictions if x.get("disease") == "Late_blight"), None)
 
-    if not early_item and not septoria_item and not late_item:
-        return initial_choice, "تم الإبقاء على النتيجة الأولية لعدم توفر أمراض الطماطم الأساسية ضمن أعلى التوقعات."
+    # إذا مرض أساسي غير موجود في أعلى التوقعات، نجهز نسخة آمنة منه من النتيجة الأولية عند الحاجة
+    def make_field_item(disease_name: str, disease_ar: str) -> Dict[str, Any]:
+        item = dict(initial_choice)
+        item["plant"] = "Tomato"
+        item["plant_ar"] = "طماطم"
+        item["disease"] = disease_name
+        item["disease_ar"] = disease_ar
+        item["confidence"] = 100.0
+        item["field_verified"] = True
+        item["decision_override"] = "مؤكد"
+        item["class_name"] = disease_name
+        return item
 
     early_score = 0
     septoria_score = 0
@@ -768,22 +777,27 @@ def apply_tomato_questionnaire(initial_choice: Dict[str, Any], top_predictions: 
     if is_yes(get_answer("q6_fast_spread_wet", "q6", "fast_spread_wet", "fast_spread", "wet_weather")):
         late_score += 3
 
+    disease_ar_map = {
+        "Early_blight": "اللفحة المبكرة",
+        "Septoria_leaf_spot": "تبقع السبتوريا",
+        "Late_blight": "اللفحة المتأخرة",
+    }
+
     candidates = []
     if early_item:
-        candidates.append(("Early_blight", early_score, early_item))
-    if septoria_item:
-        candidates.append(("Septoria_leaf_spot", septoria_score, septoria_item))
-    if late_item:
-        candidates.append(("Late_blight", late_score, late_item))
+        candidates.append(("Early_blight", early_score, dict(early_item)))
+    elif early_score >= 4:
+        candidates.append(("Early_blight", early_score, make_field_item("Early_blight", "اللفحة المبكرة")))
 
-    # إذا إجابات المستخدم تشير بقوة إلى Late_blight لكن Late_blight غير موجود ضمن Top-5
-    # لا نخترع تشخيصًا بثقة صفر، بل نبقي النتيجة الأولية ونوضح أن Late يحتاج موديل/صورة أفضل.
-    if late_score >= 5 and not late_item:
-        return initial_choice, (
-            f"الإجابات ترجّح اللفحة المتأخرة حقليًا، لكن Late_blight لم يظهر ضمن أعلى توقعات الموديل؛ "
-            f"تم الإبقاء على النتيجة الأولية دون خفض الثقة. "
-            f"(Early={early_score}, Septoria={septoria_score}, Late={late_score})"
-        )
+    if septoria_item:
+        candidates.append(("Septoria_leaf_spot", septoria_score, dict(septoria_item)))
+    elif septoria_score >= 4:
+        candidates.append(("Septoria_leaf_spot", septoria_score, make_field_item("Septoria_leaf_spot", "تبقع السبتوريا")))
+
+    if late_item:
+        candidates.append(("Late_blight", late_score, dict(late_item)))
+    elif late_score >= 5:
+        candidates.append(("Late_blight", late_score, make_field_item("Late_blight", "اللفحة المتأخرة")))
 
     max_score = max([c[1] for c in candidates]) if candidates else 0
     if max_score <= 0:
@@ -803,22 +817,18 @@ def apply_tomato_questionnaire(initial_choice: Dict[str, Any], top_predictions: 
             f"(Early={early_score}, Septoria={septoria_score}, Late={late_score})"
         )
 
-    # حماية إضافية: لا نعتمد نتيجة ثقتها صفر أو شبه صفر
-    if float(best_item.get("confidence", 0) or 0) < 1:
-        return initial_choice, (
-            f"الإجابات رجّحت {best_name}، لكن ثقة الموديل لهذا الخيار منخفضة جدًا؛ "
-            f"تم الإبقاء على النتيجة الأولية. "
-            f"(Early={early_score}, Septoria={septoria_score}, Late={late_score})"
-        )
-
-    disease_ar_map = {
-        "Early_blight": "اللفحة المبكرة",
-        "Septoria_leaf_spot": "تبقع السبتوريا",
-        "Late_blight": "اللفحة المتأخرة",
-    }
+    # عند توافق الأسئلة حقليًا مع مرض واضح، نرفع الثقة النهائية إلى 100
+    best_item["confidence"] = 100.0
+    best_item["field_verified"] = True
+    best_item["decision_override"] = "مؤكد"
+    best_item["plant"] = "Tomato"
+    best_item["plant_ar"] = "طماطم"
+    best_item["disease"] = best_name
+    best_item["disease_ar"] = disease_ar_map.get(best_name, best_name)
 
     return best_item, (
-        f"تم تعديل النتيجة بعد الأسئلة لصالح {disease_ar_map.get(best_name, best_name)}. "
+        f"تم اعتماد {disease_ar_map.get(best_name, best_name)} بعد توافق إجابات التحقق الحقلي، "
+        f"وتم رفع الثقة النهائية إلى 100%. "
         f"(Early={early_score}, Septoria={septoria_score}, Late={late_score})"
     )
 
@@ -1535,6 +1545,8 @@ async def predict(
             final_disease = chosen["disease"]
             final_disease_ar = chosen["disease_ar"]
             final_confidence = float(chosen["confidence"])
+            field_verified = bool(chosen.get("field_verified", False))
+            decision_override = chosen.get("decision_override")
             final_class_name = chosen["class_name"]
 
             disease_top_predictions = tomato_predictions
@@ -1555,6 +1567,8 @@ async def predict(
             final_disease = chosen["disease"]
             final_disease_ar = chosen["disease_ar"]
             final_confidence = float(chosen["confidence"])
+            field_verified = bool(chosen.get("field_verified", False))
+            decision_override = chosen.get("decision_override")
             final_class_name = chosen["class_name"]
 
             disease_top_predictions = same_crop_predictions if same_crop_predictions else general_predictions
@@ -1585,6 +1599,14 @@ async def predict(
             decision = "غير مؤكد"
             validation_note += " الثقة أقل من 60%؛ يُفضّل رفع صورة أوضح أو إعادة التصوير."
 
+        if field_verified:
+            decision = "مؤكد"
+            final_confidence = 100.0
+            validation_note += " تم رفع الثقة النهائية إلى 100% بعد توافق إجابات التحقق الحقلي مع المرض."
+
+        if decision_override:
+            decision = decision_override
+
         decision_note = f"{stage1_note} {stage2_note} {validation_note}".strip()
 
         sev = estimate_severity(image, final_disease if final_disease != "unknown" else "healthy")
@@ -1609,6 +1631,7 @@ async def predict(
             "disease_ar": final_disease_ar,
             "confidence": round(final_confidence, 2),
             "decision": decision,
+            "field_verified": field_verified,
             "system_used": system_used,
             "severity_label": sev["label"],
             "severity_percent": sev["percent"],
@@ -1639,6 +1662,7 @@ async def predict(
                 "disease_ar": final_disease_ar,
                 "confidence": round(final_confidence, 2),
                 "decision": decision,
+                "field_verified": field_verified,
                 "decision_note": decision_note,
             },
             "crop_disease_match": crop_match,
