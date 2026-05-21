@@ -15,8 +15,22 @@
     .field { margin-bottom:14px; }
     label { display:block; margin-bottom:8px; font-weight:700; }
     input, select, button { width:100%; padding:12px 14px; border-radius:12px; border:1px solid #d7dfeb; font-size:15px; font-family:inherit; }
-    button { background:#0f766e; color:#fff; border:none; font-weight:700; cursor:pointer; }
-    button.secondary { background:#334155; }
+    button {
+      background:#0f766e;
+      color:#fff;
+      border:none;
+      font-weight:700;
+      cursor:pointer;
+      transition:0.3s;
+    }
+    button:hover { opacity:0.92; }
+    button.secondary {
+      background:#7f1d1d;
+      color:white;
+    }
+    button.secondary:hover {
+      background:#991b1b;
+    }
     .stat { background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:14px; }
     .label { color:#64748b; font-size:13px; margin-bottom:6px; }
     .value { font-size:20px; font-weight:800; }
@@ -74,7 +88,7 @@
 
       <div class="grid">
         <button id="analyzeBtn" type="button">تشخيص الآن</button>
-        <button id="resetBtn" class="secondary" type="button">إعادة تعيين</button>
+        <button id="resetBtn" class="secondary" type="button">إعادة النظام</button>
       </div>
     </div>
 
@@ -244,6 +258,10 @@ resetBtn.addEventListener("click", async () => {
 
 async function sendPrediction(questionnaireAnswers = null) {
   const plantSelect = document.getElementById("plantSelect").value;
+
+  latestLat = document.getElementById("latInput").value.trim();
+  latestLon = document.getElementById("lonInput").value.trim();
+
   const formData = new FormData();
 
   formData.append("file", latestFile);
@@ -278,6 +296,7 @@ async function sendPrediction(questionnaireAnswers = null) {
   }
 
   render(data, !!questionnaireAnswers);
+  loadLiveWeather();
 }
 
 function collectAnswers() {
