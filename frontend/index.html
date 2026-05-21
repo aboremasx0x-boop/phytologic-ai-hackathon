@@ -200,54 +200,33 @@ analyzeBtn.addEventListener("click", async () => {
 
 submitQuestionsBtn.addEventListener("click", async () => {
   if (!latestFile) return;
-  const answers = collectAnswers();
-  await sendPrediction(answers);
-});
+ function collectAnswers() {
 
-resetBtn.addEventListener("click", () => {
-  imageInput.value = "";
-  document.getElementById("latInput").value = "";
-  document.getElementById("lonInput").value = "";
-  document.getElementById("plantSelect").value = "auto";
-  previewImage.classList.add("hidden");
-  previewPlaceholder.classList.remove("hidden");
-  questionnaireCard.classList.add("hidden");
-  resultsWrapper.classList.add("hidden");
-  document.getElementById("expertBox").classList.add("hidden");
-  document.getElementById("expertBox").innerHTML = "";
-});
-
-async function sendPrediction(questionnaireAnswers = null) {
-  const plantSelect = document.getElementById("plantSelect").value;
-  const formData = new FormData();
-
-  formData.append("file", latestFile);
-  formData.append("plant_name", plantSelect);
-
-  if (latestLat) formData.append("latitude", latestLat);
-  if (latestLon) formData.append("longitude", latestLon);
-  if (questionnaireAnswers) formData.append("questionnaire_answers", JSON.stringify(questionnaireAnswers));
-
-  const res = await fetch("/predict", {
-    method: "POST",
-    body: formData
-  });
-
-  const data = await res.json();
-  if (data.status === "error") {
-    alert(data.message || "حدث خطأ");
-    return;
-  }
-
-  render(data, !!questionnaireAnswers);
-}
-
-function collectAnswers() {
   const answers = {};
-  ["q1_bullseye", "q2_small_many", "q3_gray_center", "q4_lower_leaves"].forEach(id => {
-    const checked = document.querySelector(`input[name="${id}"]:checked`);
-    if (checked) answers[id] = checked.value === "true";
+
+  const questionIds = [
+    "q1_bullseye",
+    "q2_small_many",
+    "q3_gray_center",
+    "q4_lower_leaves",
+    "q5_large_dark_water",
+    "q6_fast_spread_wet"
+  ];
+
+  questionIds.forEach(id => {
+
+    const checked = document.querySelector(
+      `input[name="${id}"]:checked`
+    );
+
+    if (checked) {
+      answers[id] = checked.value === "true";
+    }
+
   });
+
+  console.log("Collected Answers:", answers);
+
   return answers;
 }
 
