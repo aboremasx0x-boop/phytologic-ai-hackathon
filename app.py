@@ -717,37 +717,55 @@ def generate_follow_up_questions() -> List[Dict[str, Any]]:
 
 
 def apply_tomato_questionnaire(initial_choice: Dict[str, Any], top_predictions: List[Dict[str, Any]], answers: Dict[str, Any]) -> Tuple[Dict[str, Any], str]:
-    early_item = next((x for x in top_predictions if x["disease"] == "Early_blight"), None)
-    septoria_item = next((x for x in top_predictions if x["disease"] == "Septoria_leaf_spot"), None)
-    late_item = next((x for x in top_predictions if x["disease"] == "Late_blight"), None)
-
-    if not early_item and not septoria_item and not late_item:
-        return initial_choice, "تم الإبقاء على النتيجة الأولية لعدم توفر أمراض الطماطم الأساسية للمقارنة."
+    """
+    إعادة موازنة تشخيص أمراض الطماطم بناءً على أسئلة حقلية.
+    ملاحظة مهمة:
+    - لا ننشئ مرضًا جديدًا غير موجود في top_predictions.
+    - لا نسمح بانهيار الثقة إلى 0.
+    - نقبل أسماء الأسئلة القديمة والجديدة حتى لو الواجهة لم تُحدّث بالكامل.
+    """
 
     def is_yes(v):
-        return v in [True, "true", "True", 1, "1", "yes", "Yes", "نعم"]
+        return v in [True, "true", "True", 1, "1", "yes", "Yes", "نعم", "on", "ON"]
+
+    def get_answer(*keys):
+        for k in keys:
+            if k in answers:
+                return answers.get(k)
+        return None
+
+    early_item = next((x for x in top_predictions if x.get("disease") == "Early_blight"), None)
+    septoria_item = next((x for x in top_predictions if x.get("disease") == "Septoria_leaf_spot"), None)
+    late_item = next((x for x in top_predictions if x.get("disease") == "Late_blight"), None)
+
+    if not early_item and not septoria_item and not late_item:
+        return initial_choice, "تم الإبقاء على النتيجة الأولية لعدم توفر أمراض الطماطم الأساسية ضمن أعلى التوقعات."
 
     early_score = 0
     septoria_score = 0
     late_score = 0
 
     # Early blight: حلقات هدف + غالبًا تبدأ من الأوراق السفلية
-    if is_yes(answers.get("q1_bullseye")):
+    if is_yes(get_answer("q1_bullseye", "q1", "bullseye")):
         early_score += 4
-    if is_yes(answers.get("q4_lower_leaves")):
+
+    # Septoria: بقع صغيرة كثيرة + مركز رمادي أو فاتح بحواف داكنة
+    if is_yes(get_answer("q2_small_many", "q2", "small_many")):
+        septoria_score += 4
+
+    if is_yes(get_answer("q3_gray_center", "q3", "gray_center")):
+        septoria_score += 3
+
+    # الأوراق السفلية قد تظهر في Early و Septoria، لذلك تأثيرها ضعيف
+    if is_yes(get_answer("q4_lower_leaves", "q4", "lower_leaves")):
         early_score += 1
         septoria_score += 1
 
-    # Septoria: بقع صغيرة كثيرة + مركز رمادي أو فاتح بحواف داكنة
-    if is_yes(answers.get("q2_small_many")):
-        septoria_score += 4
-    if is_yes(answers.get("q3_gray_center")):
-        septoria_score += 3
-
     # Late blight: بقع كبيرة غير منتظمة، بنية داكنة/مائية، وانتشار سريع مع الرطوبة
-    if is_yes(answers.get("q5_large_dark_water")):
+    if is_yes(get_answer("q5_large_dark_water", "q5", "large_dark_water", "large_dark", "water_soaked")):
         late_score += 5
-    if is_yes(answers.get("q6_fast_spread_wet")):
+
+    if is_yes(get_answer("q6_fast_spread_wet", "q6", "fast_spread_wet", "fast_spread", "wet_weather")):
         late_score += 3
 
     candidates = []
@@ -758,25 +776,51 @@ def apply_tomato_questionnaire(initial_choice: Dict[str, Any], top_predictions: 
     if late_item:
         candidates.append(("Late_blight", late_score, late_item))
 
-    # إذا لم تضف الأسئلة أي دليل واضح، لا نغيّر اختيار الموديل
+    # إذا إجابات المستخدم تشير بقوة إلى Late_blight لكن Late_blight غير موجود ضمن Top-5
+    # لا نخترع تشخيصًا بثقة صفر، بل نبقي النتيجة الأولية ونوضح أن Late يحتاج موديل/صورة أفضل.
+    if late_score >= 5 and not late_item:
+        return initial_choice, (
+            f"الإجابات ترجّح اللفحة المتأخرة حقليًا، لكن Late_blight لم يظهر ضمن أعلى توقعات الموديل؛ "
+            f"تم الإبقاء على النتيجة الأولية دون خفض الثقة. "
+            f"(Early={early_score}, Septoria={septoria_score}, Late={late_score})"
+        )
+
     max_score = max([c[1] for c in candidates]) if candidates else 0
     if max_score <= 0:
-        return initial_choice, f"الإجابات لم تضف مؤشرات حاسمة، فتم الإبقاء على النتيجة الأولية. (Early={early_score}, Septoria={septoria_score}, Late={late_score})"
+        return initial_choice, (
+            f"الإجابات لم تضف مؤشرات حاسمة، فتم الإبقاء على النتيجة الأولية. "
+            f"(Early={early_score}, Septoria={septoria_score}, Late={late_score})"
+        )
 
     candidates.sort(key=lambda x: x[1], reverse=True)
     best_name, best_score, best_item = candidates[0]
+    second_score = candidates[1][1] if len(candidates) > 1 else 0
 
     # لا نغيّر النتيجة إلا إذا كان الفرق واضحًا
-    second_score = candidates[1][1] if len(candidates) > 1 else 0
-    if best_score - second_score < 2 and initial_choice is not None:
-        return initial_choice, f"الإجابات متقاربة، فتم الإبقاء على النتيجة الأولية. (Early={early_score}, Septoria={septoria_score}, Late={late_score})"
+    if best_score - second_score < 2:
+        return initial_choice, (
+            f"الإجابات متقاربة، فتم الإبقاء على النتيجة الأولية. "
+            f"(Early={early_score}, Septoria={septoria_score}, Late={late_score})"
+        )
+
+    # حماية إضافية: لا نعتمد نتيجة ثقتها صفر أو شبه صفر
+    if float(best_item.get("confidence", 0) or 0) < 1:
+        return initial_choice, (
+            f"الإجابات رجّحت {best_name}، لكن ثقة الموديل لهذا الخيار منخفضة جدًا؛ "
+            f"تم الإبقاء على النتيجة الأولية. "
+            f"(Early={early_score}, Septoria={septoria_score}, Late={late_score})"
+        )
 
     disease_ar_map = {
         "Early_blight": "اللفحة المبكرة",
         "Septoria_leaf_spot": "تبقع السبتوريا",
         "Late_blight": "اللفحة المتأخرة",
     }
-    return best_item, f"تم تعديل النتيجة بعد الأسئلة لصالح {disease_ar_map.get(best_name, best_name)}. (Early={early_score}, Septoria={septoria_score}, Late={late_score})"
+
+    return best_item, (
+        f"تم تعديل النتيجة بعد الأسئلة لصالح {disease_ar_map.get(best_name, best_name)}. "
+        f"(Early={early_score}, Septoria={septoria_score}, Late={late_score})"
+    )
 
 # =========================================================
 # Stage 3 - فلتر التحقق الذكي
@@ -1277,6 +1321,18 @@ def stats():
 def recent():
     logs = load_logs()
     return {"items": list(reversed(logs[-50:]))}
+
+
+@app.get("/reset-system")
+def reset_system_get():
+    """
+    نسخة GET لتسهيل إعادة الضبط من المتصفح مباشرة.
+    """
+    safe_json_save(LOG_FILE, [])
+    return {
+        "status": "ok",
+        "message": "تمت إعادة ضبط النظام بنجاح."
+    }
 
 
 @app.post("/reset-system")
