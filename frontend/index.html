@@ -209,7 +209,18 @@ submitQuestionsBtn.addEventListener("click", async () => {
   await sendPrediction(answers);
 });
 
-resetBtn.addEventListener("click", () => {
+resetBtn.addEventListener("click", async () => {
+  const ok = confirm("هل تريد إعادة ضبط النظام وحذف جميع السجلات الحالية؟");
+  if (!ok) return;
+
+  try {
+    const res = await fetch("/reset-system", { method: "GET" });
+    const data = await res.json();
+    console.log("Reset Response:", data);
+  } catch (e) {
+    console.log("Reset API Error:", e);
+  }
+
   imageInput.value = "";
   document.getElementById("latInput").value = "";
   document.getElementById("lonInput").value = "";
@@ -226,6 +237,9 @@ resetBtn.addEventListener("click", () => {
 
   document.getElementById("expertBox").classList.add("hidden");
   document.getElementById("expertBox").innerHTML = "";
+
+  alert("تمت إعادة ضبط النظام بالكامل.");
+  location.reload();
 });
 
 async function sendPrediction(questionnaireAnswers = null) {
@@ -424,6 +438,44 @@ function renderChemical(program) {
 
   el.innerHTML = html || "<div class='program-item'>لا توجد منتجات.</div>";
 }
+
+async function loadLiveWeather() {
+  const lat = document.getElementById("latInput").value.trim();
+  const lon = document.getElementById("lonInput").value.trim();
+
+  if (!lat || !lon) return;
+
+  const weatherBox = document.getElementById("weatherCurrent");
+  if (!weatherBox) return;
+
+  try {
+    const url =
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&timezone=auto`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data.current) return;
+
+    const current = data.current;
+
+    weatherBox.innerHTML = `
+      <strong>طقس حي مباشر</strong><br>
+      حرارة: ${current.temperature_2m ?? "-"}°C<br>
+      رطوبة: ${current.relative_humidity_2m ?? "-"}%<br>
+      مطر: ${current.precipitation ?? "-"} mm<br>
+      رياح: ${current.wind_speed_10m ?? "-"} km/h
+    `;
+
+  } catch (e) {
+    console.log("Weather Error:", e);
+  }
+}
+
+// تحديث الطقس عند تغيير الإحداثيات وكل 30 ثانية
+document.getElementById("latInput").addEventListener("change", loadLiveWeather);
+document.getElementById("lonInput").addEventListener("change", loadLiveWeather);
+setInterval(loadLiveWeather, 30000);
 
 function setText(id, value) {
   document.getElementById(id).textContent = value ?? "-";
