@@ -70,7 +70,7 @@ app.add_middleware(
 PLANT_MODEL_PATH = "plant_classifier.pth" if os.path.exists("plant_classifier.pth") else "plant_classifier_v1.pth"
 PLANT_CLASSES_PATH = "plant_classes.json"
 
-GENERAL_MODEL_PATH = "plant_disease_model.pth" if os.path.exists("plant_disease_model.pth") else "plant_model.pth"
+GENERAL_MODEL_PATH = "plant_disease_model_v3.pth"
 GENERAL_CLASSES_PATH = "disease_classes.json" if os.path.exists("disease_classes.json") else "classes.json"
 
 TOMATO_MODEL_PATH = "tomato_disease_model.pth"
@@ -518,6 +518,10 @@ tomato_model.to(DEVICE)
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
+    transforms.Normalize(
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225]
+    )
 ])
 
 # =========================================================
@@ -1240,6 +1244,19 @@ def recent():
     return {"items": list(reversed(logs[-50:]))}
 
 
+@app.post("/reset-system")
+def reset_system():
+    """
+    إعادة ضبط النظام:
+    حذف السجلات السابقة فقط، بدون حذف الموديلات أو ملفات التصنيف أو ملفات الواجهة.
+    """
+    safe_json_save(LOG_FILE, [])
+    return {
+        "status": "ok",
+        "message": "تمت إعادة ضبط النظام بنجاح."
+    }
+
+
 @app.get("/alerts")
 def alerts():
     logs = load_logs()
@@ -1376,32 +1393,27 @@ async def predict(
         image_bytes = await file.read()
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
 
-        selected_plant = (plant_name or "auto").strip()
+        # =====================================================
+        # نسخة الحاضنة:
+        # إيقاف التحديد التلقائي للنبات مؤقتًا لتثبيت التشخيص
+        # واعتماد الطماطم فقط. لاحقًا يمكن إعادة Auto Plant بعد تدريب موديل أقوى.
+        # =====================================================
+        selected_plant = "Tomato"
 
         image_quality = analyze_image_quality(image)
         bullseye = detect_bullseye_pattern(image)
 
-        if selected_plant.lower() != "auto":
-            detected_plant = selected_plant
-            detected_plant_ar = ARABIC_PLANT_NAMES.get(detected_plant, detected_plant)
-            plant_confidence = 100.0
-            plant_top_predictions = [{
-                "class_name": detected_plant,
-                "plant": detected_plant,
-                "plant_ar": detected_plant_ar,
-                "confidence": 100.0,
-            }]
-            plant_gradcam_url = None
-            stage1_note = f"تم اعتماد نوع النبات من اختيار المستخدم: {detected_plant_ar}."
-        else:
-            plant_best, plant_top_predictions, _ = predict_plant_stage(image)
-            detected_plant = plant_best["plant"]
-            detected_plant_ar = plant_best["plant_ar"]
-            plant_confidence = float(plant_best["confidence"])
-
-            plant_idx = PLANT_CLASSES.index(plant_best["class_name"]) if plant_best["class_name"] in PLANT_CLASSES else 0
-            plant_gradcam_url = generate_gradcam_plant(image, plant_idx)
-            stage1_note = f"تم تحديد النبات تلقائيًا كـ {detected_plant_ar}."
+        detected_plant = "Tomato"
+        detected_plant_ar = "طماطم"
+        plant_confidence = 100.0
+        plant_top_predictions = [{
+            "class_name": "Tomato",
+            "plant": "Tomato",
+            "plant_ar": "طماطم",
+            "confidence": 100.0,
+        }]
+        plant_gradcam_url = None
+        stage1_note = "تم اعتماد نبات الطماطم مؤقتًا لضمان ثبات التشخيص في النسخة الحالية."
 
         system_used = ""
         disease_top_predictions: List[Dict[str, Any]] = []
@@ -1436,7 +1448,7 @@ async def predict(
 
             disease_top_predictions = tomato_predictions
             follow_up_questions = generate_follow_up_questions()
-            needs_questions = True
+            needs_questions = final_confidence < 70
             system_used = "tomato_ai"
 
             disease_idx = TOMATO_CLASSES.index(final_class_name) if final_class_name in TOMATO_CLASSES else 0
@@ -1477,6 +1489,10 @@ async def predict(
             bullseye,
             disease_top_predictions,
         )
+
+        if final_confidence < 60:
+            decision = "غير مؤكد"
+            validation_note += " الثقة أقل من 60%؛ يُفضّل رفع صورة أوضح أو إعادة التصوير."
 
         decision_note = f"{stage1_note} {stage2_note} {validation_note}".strip()
 
