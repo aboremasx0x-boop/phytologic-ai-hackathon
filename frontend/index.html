@@ -176,6 +176,7 @@ let latestLon = null;
 imageInput.addEventListener("change", () => {
   const file = imageInput.files[0];
   latestFile = file || null;
+
   if (file) {
     previewImage.src = URL.createObjectURL(file);
     previewImage.classList.remove("hidden");
@@ -195,13 +196,77 @@ analyzeBtn.addEventListener("click", async () => {
   latestFile = imageInput.files[0];
   latestLat = document.getElementById("latInput").value.trim();
   latestLon = document.getElementById("lonInput").value.trim();
+
   await sendPrediction();
 });
 
 submitQuestionsBtn.addEventListener("click", async () => {
   if (!latestFile) return;
- function collectAnswers() {
 
+  const answers = collectAnswers();
+  console.log("Submitting Answers:", answers);
+
+  await sendPrediction(answers);
+});
+
+resetBtn.addEventListener("click", () => {
+  imageInput.value = "";
+  document.getElementById("latInput").value = "";
+  document.getElementById("lonInput").value = "";
+  document.getElementById("plantSelect").value = "auto";
+
+  latestFile = null;
+  latestLat = null;
+  latestLon = null;
+
+  previewImage.classList.add("hidden");
+  previewPlaceholder.classList.remove("hidden");
+  questionnaireCard.classList.add("hidden");
+  resultsWrapper.classList.add("hidden");
+
+  document.getElementById("expertBox").classList.add("hidden");
+  document.getElementById("expertBox").innerHTML = "";
+});
+
+async function sendPrediction(questionnaireAnswers = null) {
+  const plantSelect = document.getElementById("plantSelect").value;
+  const formData = new FormData();
+
+  formData.append("file", latestFile);
+  formData.append("plant_name", plantSelect);
+
+  if (latestLat) {
+    formData.append("latitude", latestLat);
+  }
+
+  if (latestLon) {
+    formData.append("longitude", latestLon);
+  }
+
+  if (questionnaireAnswers) {
+    formData.append(
+      "questionnaire_answers",
+      JSON.stringify(questionnaireAnswers)
+    );
+  }
+
+  const res = await fetch("/predict", {
+    method: "POST",
+    body: formData
+  });
+
+  const data = await res.json();
+  console.log("Prediction Response:", data);
+
+  if (data.status === "error") {
+    alert(data.message || "حدث خطأ");
+    return;
+  }
+
+  render(data, !!questionnaireAnswers);
+}
+
+function collectAnswers() {
   const answers = {};
 
   const questionIds = [
@@ -214,7 +279,6 @@ submitQuestionsBtn.addEventListener("click", async () => {
   ];
 
   questionIds.forEach(id => {
-
     const checked = document.querySelector(
       `input[name="${id}"]:checked`
     );
@@ -222,11 +286,9 @@ submitQuestionsBtn.addEventListener("click", async () => {
     if (checked) {
       answers[id] = checked.value === "true";
     }
-
   });
 
   console.log("Collected Answers:", answers);
-
   return answers;
 }
 
@@ -252,13 +314,15 @@ function render(data, questionnaireSubmitted = false) {
   setText("bullseyeBox", `Bullseye: ${data.bullseye_analysis.detected ? "نعم" : "لا"} | Score: ${data.bullseye_analysis.score}`);
 
   if (data.weather && data.weather.current) {
-    setText("weatherCurrent", `حرارة: ${val(data.weather.current.temperature_2m)} | رطوبة: ${val(data.weather.current.relative_humidity_2m)} | مطر: ${val(data.weather.current.precipitation)} | رياح: ${val(data.weather.current.wind_speed_10m)}`);
+    setText(
+      "weatherCurrent",
+      `حرارة: ${val(data.weather.current.temperature_2m)} | رطوبة: ${val(data.weather.current.relative_humidity_2m)} | مطر: ${val(data.weather.current.precipitation)} | رياح: ${val(data.weather.current.wind_speed_10m)}`
+    );
   } else {
     setText("weatherCurrent", "لا توجد بيانات طقس");
   }
 
   setText("spreadLevel", `خطر الانتشار: ${data.spread_prediction.level} | الدرجة: ${val(data.spread_prediction.score)} | ${data.spread_prediction.reason}`);
-
   setText("recommendationBox", data.recommendation);
 
   renderBio(data.bio_program);
@@ -311,17 +375,20 @@ function renderQuestions(questions, show) {
 
 function renderBio(program) {
   const el = document.getElementById("bioProgramBox");
+
   if (!program) {
     el.innerHTML = "-";
     return;
   }
 
   let html = `<div class="program-item"><strong>${program.title || "-"}</strong></div>`;
+
   if (program.steps && program.steps.length) {
     program.steps.forEach(step => {
       html += `<div class="program-item">${step}</div>`;
     });
   }
+
   if (program.materials && program.materials.length) {
     program.materials.forEach(m => {
       html += `<div class="program-item"><strong>${m.name}</strong><br>${m.dose_note || ""}</div>`;
@@ -333,6 +400,7 @@ function renderBio(program) {
 
 function renderChemical(program) {
   setText("chemicalWarning", program?.warning || "-");
+
   const el = document.getElementById("chemicalProgramBox");
 
   if (!program || !program.products) {
@@ -341,6 +409,7 @@ function renderChemical(program) {
   }
 
   let html = "";
+
   program.products.forEach(p => {
     html += `
       <div class="program-item">
